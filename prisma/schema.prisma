@@ -80,6 +80,7 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   sessions     Session[]
+  drafts       Draft[]
 }
 
 model Session {
@@ -94,4 +95,19 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+// Autosaved editor drafts (browser-independent). One live draft per user for
+// new invoices; consumed (deleted) once the invoice is actually saved.
+model Draft {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  scope     String   @default("new")
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scope])
+  @@index([userId])
 }

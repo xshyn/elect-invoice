@@ -63,7 +63,12 @@ export function parseSortParam(raw: string | undefined, fallback: { field: SortF
 
 /* ---------- Auth input contracts ---------- */
 
-export const usernameSchema = z.string().trim().min(2, 'نام کاربری حداقل ۲ حرف باشد').max(40, 'نام کاربری طولانی است');
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase() // 'Ostad' و 'ostad' یک حساب‌اند؛ از قفل‌شدن پشت حروف بزرگ جلوگیری می‌کند
+  .min(2, 'نام کاربری حداقل ۲ حرف باشد')
+  .max(40, 'نام کاربری طولانی است');
 
 export const loginSchema = z.object({
   username: usernameSchema,
@@ -94,3 +99,30 @@ export function safeNext(raw: string | undefined): string {
   if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
   return '/';
 }
+
+/* ---------- Draft payload (autosave). Permissive by design: half-filled
+ *  forms must be storable. Unknown keys are stripped. */
+export const draftSchema = z.object({
+  number: z.string().max(50).default(''),
+  date: z.string().max(20).default(''),
+  buyerName: z.string().max(200).default(''),
+  buyerPhone: z.string().max(50).default(''),
+  items: z
+    .array(
+      z.object({
+        id: z.string().max(50).default(''),
+        desc: z.string().max(500).default(''),
+        qty: z.number().default(1),
+        unitPrice: z.number().default(0),
+      }),
+    )
+    .max(200)
+    .default([]),
+  discountEnabled: z.boolean().default(false),
+  discount: z.number().default(0),
+  taxEnabled: z.boolean().default(false),
+  taxRate: z.number().default(0),
+  notes: z.string().max(2000).default(''),
+});
+
+export type DraftPayload = z.infer<typeof draftSchema>;

@@ -77,6 +77,43 @@ mark.hl {
   border: 1px solid #111827;
 }
 
+/* ---------- حرکت دسترس‌پذیر (tiered reduced-motion) ----------
+   پیش‌فرض: گذارهای کوتاه و ملایم. زیر reduce: بدون جابه‌جایی، فقط محو کوتاه. */
+
+/* ورود ملایم دیالوگ‌ها — فقط وقتی سیستم اجازه حرکت می‌دهد */
+@media (prefers-reduced-motion: no-preference) {
+  .anim-pop {
+    animation: pop-in 180ms ease-out;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* تور ایمنی سراسری: حرکت‌های سرگردان خنثی می‌شوند ولی رویداد transition
+   همچنان شلیک می‌شود (0.01ms نه 0) تا منطق JS وابسته نشکند */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ---------- چاپ ---------- */
 @media print {
   @page {

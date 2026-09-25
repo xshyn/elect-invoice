@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '../generated/prisma/client';
 import { db } from './db';
 import { computeTotals } from './invoices';
-import { invoiceInputSchema, settingsSchema, type InvoiceInput, type SettingsInput } from './validators';
+import { invoiceInputSchema, settingsSchema, draftSchema, type DraftPayload, type InvoiceInput, type SettingsInput } from './validators';
 import { jalaliStringToISO, parseJalali, todayJalaliString } from '../utils/jalali';
 import { requireUserId, touchSession } from './auth';
 
@@ -224,6 +224,46 @@ export async function importBackup(rawJson: string): Promise<{ ok: true; count: 
   revalidatePath('/invoices');
   await touchSession();
   return { ok: true, count: rows.length };
+}
+
+/* ---------- Drafts: autosaved "new invoice" work-in-progress, per user.
+ *  One live draft (scope 'new'); deleted when the invoice is saved. */
+
+export async function saveDraft(raw: unknown): Promise<{ ok: true } | { ok: false }> {
+  const uid = await requireUserId();
+  if (!uid) return { ok: false };
+  const parsed = draftSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false };
+  const hasContent =
+    parsed.data.buyerName.trim() !== '' ||
+    parsed.data.buyerPhone.trim() !== '' ||
+    parsed.data.notes.trim() !== '' ||
+    parsed.data.items.some((it) => it.desc.trim() !== '' || it.unitPrice !== 0);
+  if (!hasContent) {
+    await db.draft.deleteMany({ where: { userId: uid, scope: 'new' } });
+    return { ok: true };
+  }
+  await db.draft.upsert({
+    where: { userId_scope: { userId: uid, scope: 'new' } },
+    update: { payload: JSON.parse(JSON.stringify(parsed.data)) },
+    create: { userId: uid, scope: 'new', payload: JSON.parse(JSON.stringify(parsed.data)) },
+  });
+  return { ok: true };
+}
+
+export async function getDraft(): Promise<DraftPayload | null> {
+  const uid = await requireUserId();
+  if (!uid) return null;
+  const row = await db.draft.findUnique({ where: { userId_scope: { userId: uid, scope: 'new' } } });
+  if (!row) return null;
+  const parsed = draftSchema.safeParse(row.payload);
+  return parsed.success ? parsed.data : null;
+}
+
+export async function discardDraft(): Promise<void> {
+  const uid = await requireUserId();
+  if (!uid) return;
+  await db.draft.deleteMany({ where: { userId: uid, scope: 'new' } });
 }
 
 // Helpers for the extended backup schema (title/currency travel with the row).

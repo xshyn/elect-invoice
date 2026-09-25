@@ -19,7 +19,8 @@ client-side PDF/PNG export, and JSON backup/restore.
 - ➕ Dynamic line items with auto line totals; optional overall discount and VAT (off by default)
 - 💾 Draft autosave while typing (browser) + Persian validation messages, server-side Zod enforcement
 - 🔍 Invoice list: debounced full-text search with match highlighting, date-range / amount-range / buyer filters, **multi-level sorting**, pagination (10/25/50) — all executed in SQL
-- 🖨 Clean A4 print stylesheet + client-side **PDF** and **PNG** export (`invoice-{number}-{date}.pdf`)
+- 🖨 Clean A4 print stylesheet + client-side **PDF** and **PNG** export (`invoice-{number}-{date}.pdf`) via one Export button (saving is part of the flow)
+- 💾 Autosaved **drafts in Postgres** (per user, cross-device) — consumed when the invoice is saved
 - 🏪 Business profile (name, tagline, logo, phones, address, currency, print theme) applied to every invoice
 - 🔐 Username+password login (scrypt), 90-day sliding sessions, first-run setup, logout, password change
 - 🌙 Dark mode (system-aware, toggle, persisted) — the printed invoice paper always stays white
@@ -80,7 +81,7 @@ docker-compose.yml  # app + postgres:16-alpine with healthchecks
 - **Postgres, not localStorage.** Invoices live in PostgreSQL; the list page paginates/sorts/filters in SQL. Cached `total`/`itemCount` columns keep ordering and range filters index-friendly.
 - **Number allocation is transactional.** The profile counter bump and the invoice insert happen in one transaction, with a `UNIQUE` constraint on `number` as the backstop.
 - **Validation on the server.** Zod schemas in `src/lib/validators.ts` gate every mutation; client-side checks are UX only.
-- **PDF/PNG are lazy-loaded** (`html2pdf.js`/`html2canvas` via dynamic `import()`) so the first load stays light on mobile networks.
+- **PDF/PNG are lazy-loaded** (`html2canvas-pro` + `jsPDF`, imported only when exporting) so the first load stays light on mobile networks. `html2canvas-pro` is required because Tailwind v4 emits `oklch` colors that legacy `html2canvas` cannot parse.
 - **No GitHub Pages.** Pages is static-only and cannot run Next.js server code or Postgres — deployment is Docker (any VPS) via the GHCR image. See below.
 
 ## 🌐 Deployment
@@ -132,6 +133,19 @@ The first visit to `/login` shows a one-time admin setup form. Sessions last
 90 days and slide forward on activity (any save refreshes the window); changing
 your password in Settings revokes all other sessions. Login attempts are
 rate-limited per instance. Requires `SESSION_SECRET` in production (min 16 chars).
+Usernames are lowercased at signup and login, so `Ostad` and `ostad` match.
+
+### Auth troubleshooting
+
+- **"Username is taken" on a fresh name** → the server hit an unexpected error
+  (the app logs it as `[auth:setup]`). Check server logs; common cause is a
+  missing `SESSION_SECRET` or an unmigrated database.
+- **Bounced back to `/login` after signup/login** → the session cookie wasn't
+  accepted: confirm `SESSION_SECRET` is set (production) and the clock is right.
+- **Old mixed-case account can't log in** (created before lowercasing):
+  delete it and re-register — e.g. `DELETE FROM "User";` via `psql` or Studio.
+- **`/login` shows a red config card** → follow what it says (`SESSION_SECRET`
+  missing, or migrations not applied).
 
 ## 🤝 Contributing
 

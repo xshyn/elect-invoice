@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { BusinessProfile, Invoice, LineItem } from '../types';
 import { grandTotal, lineTotal, subtotal, uid } from '../utils/calc';
 import { parseFaNumber, toFaDigits } from '../utils/persian';
 import { jalaliStringToISO, parseJalali, todayJalaliString } from '../utils/jalali';
-import { createInvoice, updateInvoice } from '../lib/actions';
+import { createInvoice, discardDraft, saveDraft, updateInvoice } from '../lib/actions';
+import type { DraftPayload } from '../lib/validators';
+import { exportInvoicePDF, exportInvoicePNG } from '../lib/export';
 import { Btn, Card, Field, Txt } from './ui';
+import ExportButton, { type ExportFormat } from './ExportButton';
 import InvoicePaper from './InvoicePaper';
 
 function emptyItem(): LineItem {
@@ -16,71 +19,80 @@ function emptyItem(): LineItem {
 
 export type EditorMode = 'new' | 'edit' | 'clone';
 
-/** Browser draft autosave — a pure UX safety net. Postgres is the source of truth. */
-function draftKey(mode: EditorMode, id: string): string {
-  return `jaryan:draft:${mode}:${id}`;
-}
-
 export default function EditorForm({
   mode,
   initial,
   profile,
   suggestedNumber,
+  initialDraft = null,
 }: {
   mode: EditorMode;
   initial: Invoice | null;
   profile: BusinessProfile;
   suggestedNumber: string;
+  initialDraft?: DraftPayload | null;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const draftSeed = mode === 'new' && !initial ? initialDraft : null;
 
-  const [number, setNumber] = useState(initial && mode === 'edit' ? initial.number : suggestedNumber);
-  const [date, setDate] = useState(initial?.date ?? todayJalaliString());
-  const [buyerName, setBuyerName] = useState(initial?.buyerName ?? '');
-  const [buyerPhone, setBuyerPhone] = useState(initial?.buyerPhone ?? '');
-  const [items, setItems] = useState<LineItem[]>(() =>
-    initial && initial.items.length ? initial.items.map((i) => ({ ...i, id: uid() })) : Array.from({ length: 5 }, emptyItem),
+  const [number, setNumber] = useState(
+    initial && mode === 'edit' ? initial.number : (draftSeed?.number || suggestedNumber),
   );
-  const [discountEnabled, setDiscountEnabled] = useState(initial?.discountEnabled ?? false);
-  const [discount, setDiscount] = useState(initial?.discount ? String(initial.discount) : '');
-  const [taxEnabled, setTaxEnabled] = useState(initial?.taxEnabled ?? false);
-  const [taxRate, setTaxRate] = useState(String(initial?.taxRate ?? 10));
-  const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [date, setDate] = useState(initial?.date ?? draftSeed?.date ?? todayJalaliString());
+  const [buyerName, setBuyerName] = useState(initial?.buyerName ?? draftSeed?.buyerName ?? '');
+  const [buyerPhone, setBuyerPhone] = useState(initial?.buyerPhone ?? draftSeed?.buyerPhone ?? '');
+  const [items, setItems] = useState<LineItem[]>(() => {
+    if (initial && initial.items.length) return initial.items.map((i) => ({ ...i, id: uid() }));
+    if (draftSeed && draftSeed.items.length)
+      return draftSeed.items.map((i) => ({ id: i.id || uid(), desc: i.desc, qty: i.qty, unitPrice: i.unitPrice }));
+    return Array.from({ length: 5 }, emptyItem);
+  });
+  const [discountEnabled, setDiscountEnabled] = useState(initial?.discountEnabled ?? draftSeed?.discountEnabled ?? false);
+  const [discount, setDiscount] = useState(
+    initial?.discount ? String(initial.discount) : draftSeed?.discount ? String(draftSeed.discount) : '',
+  );
+  const [taxEnabled, setTaxEnabled] = useState(initial?.taxEnabled ?? draftSeed?.taxEnabled ?? false);
+  const [taxRate, setTaxRate] = useState(String(initial?.taxRate ?? draftSeed?.taxRate ?? 10));
+  const [notes, setNotes] = useState(initial?.notes ?? draftSeed?.notes ?? '');
   const [preview, setPreview] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [draftState, setDraftState] = useState<'idle' | 'saving' | 'saved'>(draftSeed ? 'saved' : 'idle');
+  const [draftSavedAt, setDraftSavedAt] = useState('');
+  // Export-before-save flow
+  const [exportArmed, setExportArmed] = useState(false);
+  const [exportedId, setExportedId] = useState<string | null>(null);
+  const hiddenPaperRef = useRef<HTMLDivElement>(null);
 
-  // Restore browser draft for brand-new invoices
+  // Autosave draft to the DATABASE (debounced). Empty form cleans the draft.
   useEffect(() => {
     if (mode !== 'new') return;
-    try {
-      const raw = localStorage.getItem(draftKey(mode, 'new'));
-      if (!raw) return;
-      const d = JSON.parse(raw) as Partial<Invoice>;
-      if (d.number) setNumber(d.number);
-      if (d.date) setDate(d.date);
-      if (d.buyerName) setBuyerName(d.buyerName);
-      if (d.buyerPhone) setBuyerPhone(d.buyerPhone);
-      if (d.items?.length) setItems(d.items as LineItem[]);
-      if (d.notes) setNotes(d.notes);
-    } catch {
-      /* corrupt draft — ignore */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Autosave draft while typing (new invoices only)
-  useEffect(() => {
-    if (mode !== 'new') return;
+    setDraftState('saving');
     const t = setTimeout(() => {
-      try {
-        localStorage.setItem(draftKey(mode, 'new'), JSON.stringify({ number, date, buyerName, buyerPhone, items, notes }));
-      } catch {
-        /* storage full — ignore */
-      }
-    }, 500);
+      saveDraft({
+        number, date, buyerName, buyerPhone,
+        items: items.map((it) => ({ id: it.id, desc: it.desc, qty: it.qty, unitPrice: it.unitPrice })),
+        discountEnabled, discount: parseFaNumber(discount),
+        taxEnabled, taxRate: parseFaNumber(taxRate), notes,
+      }).then((r) => {
+        if (r.ok) {
+          setDraftState('saved');
+          setDraftSavedAt(new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }));
+        } else {
+          setDraftState('idle');
+        }
+      });
+    }, 1500);
     return () => clearTimeout(t);
-  }, [mode, number, date, buyerName, buyerPhone, items, notes]);
+  }, [mode, number, date, buyerName, buyerPhone, items, notes, discount, discountEnabled, taxRate, taxEnabled]);
+
+  const discardDraftNow = () => {
+    start(async () => {
+      await discardDraft();
+      setDraftState('idle');
+      setDraftSavedAt('');
+    });
+  };
 
   const draftInv: Invoice = useMemo(
     () => ({
@@ -123,13 +135,8 @@ export default function EditorForm({
     return errs;
   };
 
-  const handleSave = () => {
-    const errs = validate();
-    setErrors(errs);
-    if (errs.length) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
+  /** Shared persist used by Save AND Export (export always saves first). */
+  const persist = async (): Promise<{ ok: true; id: string } | { ok: false; errors: string[] }> => {
     const payload = {
       number: number.trim(),
       date,
@@ -142,22 +149,48 @@ export default function EditorForm({
       taxRate: parseFaNumber(taxRate),
       notes: notes.trim(),
     };
+    const res = mode === 'edit' && initial ? await updateInvoice(initial.id, payload) : await createInvoice(payload);
+    if (!res.ok) return res;
+    if (!res.id) return { ok: false, errors: ['ذخیره انجام شد ولی شناسه برنگشت؛ از لیست ادامه بده.'] };
+    if (mode === 'new') await discardDraft();
+    return { ok: true, id: res.id };
+  };
+
+  const handleSave = () => {
+    const errs = validate();
+    setErrors(errs);
+    if (errs.length) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     start(async () => {
-      const res = mode === 'edit' && initial ? await updateInvoice(initial.id, payload) : await createInvoice(payload);
+      const res = await persist();
       if (!res.ok) {
         setErrors(res.errors);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
-      if (mode === 'new') {
-        try {
-          localStorage.removeItem(draftKey(mode, 'new'));
-        } catch {
-          /* ignore */
-        }
-      }
       router.push(`/invoices/${res.id}`);
     });
+  };
+
+  /** Export flow: validate → save → export the saved invoice. */
+  const handleExportSave = async (format: ExportFormat) => {
+    const errs = validate();
+    setErrors(errs);
+    if (errs.length) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      throw new Error('اول خطاهای فرم را اصلاح کن.');
+    }
+    const res = await persist();
+    if (!res.ok) throw new Error(res.errors[0] ?? 'ذخیره ناموفق بود.');
+    setExportedId(res.id);
+    const fb = `invoice-${(number.trim() || '…').replace(/\s+/g, '-')}-${(parseJalali(date) ? date : todayJalaliString()).replaceAll('/', '-')}`;
+    // Hidden paper mounts when the dialog opens; wait a tick for layout.
+    await new Promise((r) => setTimeout(r, 60));
+    if (!hiddenPaperRef.current) throw new Error('کاغذ فاکتور آماده نیست؛ دوباره امتحان کن.');
+    if (format === 'pdf') await exportInvoicePDF(hiddenPaperRef.current, `${fb}.pdf`);
+    else await exportInvoicePNG(hiddenPaperRef.current, `${fb}.png`);
   };
 
   return (
@@ -194,6 +227,7 @@ export default function EditorForm({
             <Btn onClick={() => setPreview(false)} variant="outline" className="flex-1">
               بازگشت به فرم
             </Btn>
+            <ExportButton onExport={handleExportSave} onOpenChange={setExportArmed} label="💾⬇ ذخیره و خروجی" className="flex-1" />
             <Btn onClick={handleSave} disabled={pending} className="flex-1">
               {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
             </Btn>
@@ -217,9 +251,18 @@ export default function EditorForm({
               </Field>
             </div>
             {mode === 'new' ? (
-              <p className="rounded-xl bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
-                💾 پیش‌نویس در همین مرورگر نگه داشته می‌شود؛ ثبت نهایی در دیتابیس انجام می‌شود.
-              </p>
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
+                <span>
+                  💾 پیش‌نویس در دیتابیس ذخیره می‌شود
+                  {draftState === 'saving' ? '…' : draftState === 'saved' ? ` ✓${draftSavedAt ? ` (${draftSavedAt})` : ''}` : ''}
+                  ؛ با هر دستگاهی ادامه بده.
+                </span>
+                {draftState === 'saved' ? (
+                  <button onClick={discardDraftNow} className="shrink-0 font-bold underline underline-offset-4">
+                    دور بریز
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </Card>
 
@@ -323,10 +366,27 @@ export default function EditorForm({
             <Btn onClick={() => router.back()} variant="outline" className="flex-1" disabled={pending}>
               انصراف
             </Btn>
+            <ExportButton onExport={handleExportSave} onOpenChange={setExportArmed} label="💾⬇ ذخیره و خروجی" className="flex-1" />
             <Btn onClick={handleSave} disabled={pending} className="flex-[2]">
               {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
             </Btn>
           </div>
+
+          {exportedId ? (
+            <div className="no-print flex items-center justify-between gap-2 rounded-2xl bg-teal-50 dark:bg-teal-500/15 px-4 py-3 text-[13px] font-bold text-teal-800 dark:text-teal-200">
+              <span>✅ ذخیره و خروجی انجام شد.</span>
+              <button onClick={() => router.push(`/invoices/${exportedId}`)} className="shrink-0 underline underline-offset-4">
+                مشاهده فاکتور ←
+              </button>
+            </div>
+          ) : null}
+
+          {/* کاغذ پنهان برای خروجی‌گرفتن بلافاصله بعد از ذخیره */}
+          {exportArmed ? (
+            <div aria-hidden className="no-print" style={{ position: 'fixed', top: 0, left: '-10000px', width: 820, pointerEvents: 'none' }}>
+              <InvoicePaper ref={hiddenPaperRef} invoice={draftInv} business={profile} shadow={false} />
+            </div>
+          ) : null}
         </div>
       )}
     </div>
