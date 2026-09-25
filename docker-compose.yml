@@ -7,7 +7,8 @@ services:
       POSTGRES_PASSWORD: jaryan
       POSTGRES_DB: jaryan
     ports:
-      - "5432:5432"
+      # Override with DB_PORT=... if the default clashes locally.
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +28,7 @@ services:
       HOSTNAME: "0.0.0.0"
       PORT: "3000"
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
 
 volumes:
   pgdata:
