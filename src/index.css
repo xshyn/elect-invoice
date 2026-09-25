@@ -1,0 +1,99 @@
+@import "tailwindcss";
+@import "@fontsource/vazirmatn/400.css";
+@import "@fontsource/vazirmatn/500.css";
+@import "@fontsource/vazirmatn/700.css";
+@import "@fontsource/vazirmatn/800.css";
+
+@theme {
+  --font-sans: "Vazirmatn", "IRANSans", "Tahoma", system-ui, sans-serif;
+  --color-volt-50: #fffbeb;
+  --color-volt-100: #fef3c7;
+  --color-volt-200: #fde68a;
+  --color-volt-400: #fbbf24;
+  --color-volt-500: #f59e0b;
+  --color-volt-600: #d97706;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
+
+/* ورودی‌های عددی: فونت کمی درشت‌تر و چپ‌چین داخل کادر برای خوانایی ارقام */
+.num-input {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+mark.hl {
+  background: #fde68a;
+  color: inherit;
+  border-radius: 0.25rem;
+  padding: 0 0.15rem;
+}
+
+/* ---------- کاغذ فاکتور (نمای چاپی) ---------- */
+.invoice-paper {
+  background: #fff;
+  color: #111827;
+  width: 100%;
+  max-width: 820px;
+  margin-inline: auto;
+}
+
+.invoice-grid {
+  border: 2px solid #111827;
+}
+
+.invoice-grid th,
+.invoice-grid td {
+  border: 1px solid #111827;
+}
+
+/* ---------- چاپ ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  #invoice-print-area {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  .app-shell {
+    padding: 0 !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
+
+/* اسکرول‌بار باریک برای جدول‌ها */
+.thin-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
