@@ -1,46 +1,30 @@
-import { useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useApp } from '../store/app';
+'use client';
+
+import { useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { BusinessProfile, Invoice } from '../types';
 import { grandTotal } from '../utils/calc';
 import { toFaDigits } from '../utils/persian';
-import { Btn, Card } from '../components/ui';
-import InvoicePaper from '../components/InvoicePaper';
+import { createInvoice, deleteInvoice } from '../lib/actions';
+import { Btn } from './ui';
+import InvoicePaper from './InvoicePaper';
 
-export default function InvoiceView() {
-  const { id } = useParams();
-  const { invoices, settings, deleteInvoice } = useApp();
-  const nav = useNavigate();
+export default function InvoiceViewClient({ invoice, business }: { invoice: Invoice; business: BusinessProfile }) {
+  const router = useRouter();
   const paperRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const invoice = invoices.find((x) => x.id === id);
-  if (!invoice) {
-    return (
-      <Card className="p-8 text-center">
-        <p className="text-2xl">🧾</p>
-        <p className="mt-2 font-extrabold text-slate-700">فاکتور پیدا نشد</p>
-        <p className="mt-1 text-sm text-slate-400">شاید حذف شده باشد.</p>
-        <div className="mt-4">
-          <Link to="/invoices">
-            <Btn>بازگشت به لیست</Btn>
-          </Link>
-        </div>
-      </Card>
-    );
-  }
+  const [cloning, startClone] = useTransition();
 
   const fileBase = `invoice-${invoice.number.replace(/\s+/g, '-')}-${invoice.date.replaceAll('/', '-')}`;
-
-  const handlePrint = () => window.print();
 
   const handlePDF = async () => {
     if (!paperRef.current) return;
     setBusy('pdf');
     try {
       const mod = await import('html2pdf.js');
-      const html2pdf = mod.default;
-      await html2pdf()
+      await mod.default()
         .set({
           margin: 6,
           filename: `${fileBase}.pdf`,
@@ -60,8 +44,7 @@ export default function InvoiceView() {
     setBusy('png');
     try {
       const mod = await import('html2canvas');
-      const html2canvas = mod.default;
-      const canvas = await html2canvas(paperRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const canvas = await mod.default(paperRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = `${fileBase}.png`;
@@ -71,28 +54,48 @@ export default function InvoiceView() {
     }
   };
 
+  const handleClone = () => {
+    startClone(async () => {
+      const res = await createInvoice({
+        number: '',
+        date: invoice.date,
+        buyerName: invoice.buyerName,
+        buyerPhone: invoice.buyerPhone,
+        items: invoice.items.map((i) => ({ desc: i.desc, qty: i.qty, unitPrice: i.unitPrice })),
+        discountEnabled: invoice.discountEnabled,
+        discount: invoice.discount,
+        taxEnabled: invoice.taxEnabled,
+        taxRate: invoice.taxRate,
+        notes: invoice.notes,
+      });
+      if (res.ok && res.id) router.push(`/invoices/${res.id}`);
+    });
+  };
+
   return (
     <div className="space-y-3">
-      {/* نوار اقدام — در چاپ مخفی */}
       <div className="no-print flex items-center justify-between gap-2">
-        <button onClick={() => nav(-1)} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
+        <button onClick={() => router.back()} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
           → بازگشت
         </button>
         <div className="flex gap-1.5">
-          <button onClick={() => nav(`/edit/${invoice.id}`)} className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
+          <Link href={`/edit/${invoice.id}`} className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
             ✎ ویرایش
-          </button>
-          <button onClick={() => nav(`/clone/${invoice.id}`)} className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-900">
-            ⧉ کپی
+          </Link>
+          <button
+            onClick={handleClone}
+            disabled={cloning}
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-900 disabled:opacity-50"
+          >
+            {cloning ? '…' : '⧉ کپی'}
           </button>
         </div>
       </div>
 
-      <InvoicePaper ref={paperRef} invoice={invoice} business={settings} />
+      <InvoicePaper ref={paperRef} invoice={invoice} business={business} />
 
-      {/* اقدام‌های خروجی — در چاپ مخفی */}
-      <Card className="no-print grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
-        <Btn onClick={handlePrint}>🖨 چاپ</Btn>
+      <div className="no-print grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm sm:grid-cols-4">
+        <Btn onClick={() => window.print()}>🖨 چاپ</Btn>
         <Btn onClick={handlePDF} variant="soft" disabled={busy !== null}>
           {busy === 'pdf' ? '…در حال ساخت' : '⬇ خروجی PDF'}
         </Btn>
@@ -102,7 +105,7 @@ export default function InvoiceView() {
         <Btn onClick={() => setConfirmDelete(true)} variant="danger">
           🗑 حذف
         </Btn>
-      </Card>
+      </div>
 
       <p className="no-print text-center text-xs leading-5 text-slate-400">
         جمع کل: {toFaDigits(grandTotal(invoice).toLocaleString('en-US'))} {invoice.currency} • نام فایل خروجی: {fileBase}.pdf
@@ -117,13 +120,7 @@ export default function InvoiceView() {
               <button onClick={() => setConfirmDelete(false)} className="rounded-xl bg-slate-100 py-3 text-sm font-bold">
                 انصراف
               </button>
-              <button
-                onClick={() => {
-                  deleteInvoice(invoice.id);
-                  nav('/invoices');
-                }}
-                className="rounded-xl bg-rose-600 py-3 text-sm font-bold text-white"
-              >
+              <button onClick={() => deleteInvoice(invoice.id)} className="rounded-xl bg-rose-600 py-3 text-sm font-bold text-white">
                 حذف کن
               </button>
             </div>

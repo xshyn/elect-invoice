@@ -1,115 +1,94 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useApp } from '../store/app';
-import type { Invoice, LineItem } from '../types';
-import { localStorageAdapter } from '../store/db';
+'use client';
+
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import type { BusinessProfile, Invoice, LineItem } from '../types';
 import { grandTotal, lineTotal, subtotal, uid } from '../utils/calc';
 import { parseFaNumber, toFaDigits } from '../utils/persian';
 import { jalaliStringToISO, parseJalali, todayJalaliString } from '../utils/jalali';
-import { Btn, Card, Field, Txt } from '../components/ui';
-import InvoicePaper from '../components/InvoicePaper';
+import { createInvoice, updateInvoice } from '../lib/actions';
+import { Btn, Card, Field, Txt } from './ui';
+import InvoicePaper from './InvoicePaper';
 
 function emptyItem(): LineItem {
   return { id: uid(), desc: '', qty: 1, unitPrice: 0 };
 }
 
-interface Draft extends Partial<Invoice> {
-  __editId?: string;
+export type EditorMode = 'new' | 'edit' | 'clone';
+
+/** Browser draft autosave — a pure UX safety net. Postgres is the source of truth. */
+function draftKey(mode: EditorMode, id: string): string {
+  return `jaryan:draft:${mode}:${id}`;
 }
 
-export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone' }) {
-  const { invoices, settings, saveInvoice, allocateNumber } = useApp();
-  const nav = useNavigate();
-  const { id } = useParams();
-  const allocated = useRef(false);
+export default function EditorForm({
+  mode,
+  initial,
+  profile,
+  suggestedNumber,
+}: {
+  mode: EditorMode;
+  initial: Invoice | null;
+  profile: BusinessProfile;
+  suggestedNumber: string;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
 
-  const source: Invoice | undefined = useMemo(() => {
-    if ((mode === 'edit' || mode === 'clone') && id) return invoices.find((x) => x.id === id);
-    return undefined;
-  }, [mode, id, invoices]);
-
-  const [number, setNumber] = useState('');
-  const [date, setDate] = useState(todayJalaliString());
-  const [buyerName, setBuyerName] = useState('');
-  const [buyerPhone, setBuyerPhone] = useState('');
-  const [items, setItems] = useState<LineItem[]>(() => Array.from({ length: 5 }, emptyItem));
-  const [discountEnabled, setDiscountEnabled] = useState(false);
-  const [discount, setDiscount] = useState('');
-  const [taxEnabled, setTaxEnabled] = useState(false);
-  const [taxRate, setTaxRate] = useState('۱۰');
-  const [notes, setNotes] = useState('');
+  const [number, setNumber] = useState(initial && mode === 'edit' ? initial.number : suggestedNumber);
+  const [date, setDate] = useState(initial?.date ?? todayJalaliString());
+  const [buyerName, setBuyerName] = useState(initial?.buyerName ?? '');
+  const [buyerPhone, setBuyerPhone] = useState(initial?.buyerPhone ?? '');
+  const [items, setItems] = useState<LineItem[]>(() =>
+    initial && initial.items.length ? initial.items.map((i) => ({ ...i, id: uid() })) : Array.from({ length: 5 }, emptyItem),
+  );
+  const [discountEnabled, setDiscountEnabled] = useState(initial?.discountEnabled ?? false);
+  const [discount, setDiscount] = useState(initial?.discount ? String(initial.discount) : '');
+  const [taxEnabled, setTaxEnabled] = useState(initial?.taxEnabled ?? false);
+  const [taxRate, setTaxRate] = useState(String(initial?.taxRate ?? 10));
+  const [notes, setNotes] = useState(initial?.notes ?? '');
   const [preview, setPreview] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [restored, setRestored] = useState(false);
 
-  // مقداردهی اولیه
+  // Restore browser draft for brand-new invoices
   useEffect(() => {
-    if (mode === 'edit' && source) {
-      setNumber(source.number);
-      setDate(source.date);
-      setBuyerName(source.buyerName);
-      setBuyerPhone(source.buyerPhone);
-      setItems(source.items.length ? source.items.map((i) => ({ ...i })) : [emptyItem()]);
-      setDiscountEnabled(source.discountEnabled);
-      setDiscount(source.discount ? String(source.discount) : '');
-      setTaxEnabled(source.taxEnabled);
-      setTaxRate(String(source.taxRate || 10));
-      setNotes(source.notes);
-      return;
-    }
-    if (mode === 'clone' && source) {
-      setNumber('');
-      setDate(todayJalaliString());
-      setBuyerName(source.buyerName);
-      setBuyerPhone(source.buyerPhone);
-      setItems(source.items.map((i) => ({ ...i, id: uid() })));
-      setDiscountEnabled(source.discountEnabled);
-      setDiscount(source.discount ? String(source.discount) : '');
-      setTaxEnabled(source.taxEnabled);
-      setTaxRate(String(source.taxRate || 10));
-      setNotes(source.notes);
-      return;
-    }
-    // حالت جدید: بازیابی پیش‌نویس خودکار
-    if (mode === 'new' && !restored) {
-      const draft = localStorageAdapter.loadDraft() as Draft | null;
-      if (draft && (draft.items?.length || draft.buyerName || draft.number)) {
-        setNumber(draft.number ?? '');
-        setDate(draft.date ?? todayJalaliString());
-        setBuyerName(draft.buyerName ?? '');
-        setBuyerPhone(draft.buyerPhone ?? '');
-        if (draft.items?.length) setItems(draft.items as LineItem[]);
-        setNotes(draft.notes ?? '');
-      }
-      setRestored(true);
+    if (mode !== 'new') return;
+    try {
+      const raw = localStorage.getItem(draftKey(mode, 'new'));
+      if (!raw) return;
+      const d = JSON.parse(raw) as Partial<Invoice>;
+      if (d.number) setNumber(d.number);
+      if (d.date) setDate(d.date);
+      if (d.buyerName) setBuyerName(d.buyerName);
+      if (d.buyerPhone) setBuyerPhone(d.buyerPhone);
+      if (d.items?.length) setItems(d.items as LineItem[]);
+      if (d.notes) setNotes(d.notes);
+    } catch {
+      /* corrupt draft — ignore */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, source?.id]);
+  }, []);
 
-  // تخصیص شماره خودکار برای فاکتور جدید
-  useEffect(() => {
-    if (mode === 'new' && !number && !allocated.current) {
-      allocated.current = true;
-      setNumber(allocateNumber());
-    }
-  }, [mode, number, allocateNumber]);
-
-  // پیش‌نویس خودکار (debounce نیم‌ثانیه‌ای)
+  // Autosave draft while typing (new invoices only)
   useEffect(() => {
     if (mode !== 'new') return;
     const t = setTimeout(() => {
-      localStorageAdapter.saveDraft({ number, date, buyerName, buyerPhone, items, notes });
+      try {
+        localStorage.setItem(draftKey(mode, 'new'), JSON.stringify({ number, date, buyerName, buyerPhone, items, notes }));
+      } catch {
+        /* storage full — ignore */
+      }
     }, 500);
     return () => clearTimeout(t);
   }, [mode, number, date, buyerName, buyerPhone, items, notes]);
 
   const draftInv: Invoice = useMemo(
     () => ({
-      id: source?.id ?? 'preview',
+      id: initial?.id ?? 'preview',
       number: number || '…',
       date: parseJalali(date) ? date : todayJalaliString(),
       gregorianISO: jalaliStringToISO(parseJalali(date) ? date : todayJalaliString()),
-      title: settings.invoiceTitle,
+      title: profile.invoiceTitle,
       buyerName,
       buyerPhone,
       items,
@@ -117,12 +96,12 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
       discount: parseFaNumber(discount),
       taxEnabled,
       taxRate: parseFaNumber(taxRate),
-      currency: settings.currency,
+      currency: profile.currency,
       notes,
-      createdAt: source?.createdAt ?? new Date().toISOString(),
+      createdAt: initial?.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }),
-    [source, number, date, buyerName, buyerPhone, items, discountEnabled, discount, taxEnabled, taxRate, settings, notes],
+    [initial, number, date, buyerName, buyerPhone, items, discountEnabled, discount, taxEnabled, taxRate, profile, notes],
   );
 
   const updateItem = (itemId: string, patch: Partial<LineItem>) => {
@@ -151,29 +130,35 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const now = new Date().toISOString();
-    const filled = items.filter((it) => it.desc.trim());
-    if (mode === 'edit' && source) {
-      saveInvoice({ ...draftInv, id: source.id, items: filled, createdAt: source.createdAt, updatedAt: now });
-      nav(`/invoices/${source.id}`);
-    } else {
-      const inv: Invoice = { ...draftInv, id: uid(), items: filled, createdAt: now, updatedAt: now };
-      saveInvoice(inv);
-      if (mode === 'new') localStorageAdapter.saveDraft(null);
-      nav(`/invoices/${inv.id}`);
-    }
+    const payload = {
+      number: number.trim(),
+      date,
+      buyerName: buyerName.trim(),
+      buyerPhone: buyerPhone.trim(),
+      items: items.filter((it) => it.desc.trim()).map((it) => ({ desc: it.desc.trim(), qty: it.qty, unitPrice: it.unitPrice })),
+      discountEnabled,
+      discount: parseFaNumber(discount),
+      taxEnabled,
+      taxRate: parseFaNumber(taxRate),
+      notes: notes.trim(),
+    };
+    start(async () => {
+      const res = mode === 'edit' && initial ? await updateInvoice(initial.id, payload) : await createInvoice(payload);
+      if (!res.ok) {
+        setErrors(res.errors);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (mode === 'new') {
+        try {
+          localStorage.removeItem(draftKey(mode, 'new'));
+        } catch {
+          /* ignore */
+        }
+      }
+      router.push(`/invoices/${res.id}`);
+    });
   };
-
-  if ((mode === 'edit' || mode === 'clone') && !source) {
-    return (
-      <Card className="p-8 text-center">
-        <p className="font-bold text-slate-600">فاکتور پیدا نشد.</p>
-        <div className="mt-4">
-          <Btn onClick={() => nav('/invoices')}>بازگشت به لیست</Btn>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-3">
@@ -182,20 +167,10 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
           {mode === 'edit' ? 'ویرایش فاکتور' : mode === 'clone' ? 'کپی از فاکتور' : 'فاکتور جدید'}
         </h2>
         <div className="flex rounded-xl bg-slate-200/70 p-1 text-[13px] font-bold" role="tablist" aria-label="حالت نمایش">
-          <button
-            role="tab"
-            aria-selected={!preview}
-            onClick={() => setPreview(false)}
-            className={`rounded-lg px-4 py-2 ${!preview ? 'bg-white shadow' : 'text-slate-500'}`}
-          >
+          <button role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={`rounded-lg px-4 py-2 ${!preview ? 'bg-white shadow' : 'text-slate-500'}`}>
             ✎ فرم
           </button>
-          <button
-            role="tab"
-            aria-selected={preview}
-            onClick={() => setPreview(true)}
-            className={`rounded-lg px-4 py-2 ${preview ? 'bg-white shadow' : 'text-slate-500'}`}
-          >
+          <button role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={`rounded-lg px-4 py-2 ${preview ? 'bg-white shadow' : 'text-slate-500'}`}>
             👁 پیش‌نمایش
           </button>
         </div>
@@ -214,13 +189,13 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
 
       {preview ? (
         <div className="space-y-3">
-          <InvoicePaper invoice={draftInv} business={settings} />
+          <InvoicePaper invoice={draftInv} business={profile} />
           <div className="no-print flex gap-2">
             <Btn onClick={() => setPreview(false)} variant="outline" className="flex-1">
               بازگشت به فرم
             </Btn>
-            <Btn onClick={handleSave} className="flex-1">
-              💾 ذخیره فاکتور
+            <Btn onClick={handleSave} disabled={pending} className="flex-1">
+              {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
             </Btn>
           </div>
         </div>
@@ -241,9 +216,11 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
                 <Txt value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} inputMode="tel" placeholder="۰۹۱۲…" />
               </Field>
             </div>
-            <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
-              💾 پیش‌نویس به‌صورت خودکار ذخیره می‌شود؛ اگر مرورگر بسته شود اطلاعات از دست نمی‌رود.
-            </p>
+            {mode === 'new' ? (
+              <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                💾 پیش‌نویس در همین مرورگر نگه داشته می‌شود؛ ثبت نهایی در دیتابیس انجام می‌شود.
+              </p>
+            ) : null}
           </Card>
 
           <Card className="p-4">
@@ -314,7 +291,7 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
               <input type="checkbox" checked={discountEnabled} onChange={(e) => setDiscountEnabled(e.target.checked)} className="h-5 w-5 accent-amber-500" />
             </label>
             {discountEnabled ? (
-              <Field label={`مبلغ تخفیف (${settings.currency})`}>
+              <Field label={`مبلغ تخفیف (${profile.currency})`}>
                 <Txt value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="numeric" className="num-input" />
               </Field>
             ) : null}
@@ -343,11 +320,11 @@ export default function InvoiceEditor({ mode }: { mode: 'new' | 'edit' | 'clone'
           </Card>
 
           <div className="no-print sticky bottom-20 flex gap-2 md:static">
-            <Btn onClick={() => nav(-1)} variant="outline" className="flex-1">
+            <Btn onClick={() => router.back()} variant="outline" className="flex-1" disabled={pending}>
               انصراف
             </Btn>
-            <Btn onClick={handleSave} className="flex-[2]">
-              💾 ذخیره فاکتور
+            <Btn onClick={handleSave} disabled={pending} className="flex-[2]">
+              {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
             </Btn>
           </div>
         </div>

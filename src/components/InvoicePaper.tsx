@@ -1,3 +1,5 @@
+'use client';
+
 import { forwardRef } from 'react';
 import type { BusinessProfile, Invoice, PaperTheme } from '../types';
 import { grandTotal, lineTotal, subtotal, taxAmount } from '../utils/calc';

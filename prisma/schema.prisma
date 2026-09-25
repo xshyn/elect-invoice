@@ -1,0 +1,71 @@
+// Prisma v7 schema — PostgreSQL.
+// Connection URL lives in prisma.config.ts (env DATABASE_URL), not here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Singleton row (id = "default"). Holds the branding + numbering defaults
+// that are stamped onto every new invoice.
+model BusinessProfile {
+  id            String   @id @default("default")
+  name          String   @default("جریان")
+  tagline       String   @default("")
+  phones        String[]
+  address       String   @default("")
+  website       String   @default("")
+  logoDataUrl   String   @default("")
+  invoiceTitle  String   @default("صورتحساب")
+  currency      String   @default("تومان")
+  wordsUnit     String   @default("تومان")
+  numberPrefix  String   @default("")
+  nextNumber    Int      @default(101)
+  theme         String   @default("amber")
+  updatedAt     DateTime @updatedAt
+}
+
+model Invoice {
+  id              String     @id @default(uuid())
+  number          String     @unique
+  // Jalali date as "YYYY/MM/DD" (latin digits) + Gregorian ISO for reliable ordering.
+  date            String
+  gregorianISO    String
+  title           String     @default("صورتحساب")
+  buyerName       String     @default("")
+  buyerPhone      String     @default("")
+  discountEnabled Boolean    @default(false)
+  discount        Float      @default(0)
+  taxEnabled      Boolean    @default(false)
+  taxRate         Float      @default(0)
+  currency        String     @default("تومان")
+  notes           String     @default("")
+  // Denormalized caches, maintained on every write so list
+  // sorting/filtering/pagination runs in SQL, not in JS.
+  total           Float      @default(0)
+  itemCount       Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  items           LineItem[]
+
+  @@index([gregorianISO])
+  @@index([buyerName])
+  @@index([total])
+  @@index([updatedAt])
+}
+
+model LineItem {
+  id        String  @id @default(uuid())
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId String
+  position  Int     @default(0)
+  desc      String
+  qty       Float
+  unitPrice Float
+
+  @@index([invoiceId])
+}
