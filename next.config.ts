@@ -1,8 +1,10 @@
 import type { NextConfig } from 'next';
 
+// `standalone` output is only for the Docker image. Vercel manages its own
+// output mode — setting `standalone` there is redundant, so the Dockerfile
+// builder sets DOCKER_STANDALONE=1 to opt in.
 const nextConfig: NextConfig = {
-  // Standalone output for Docker deployment (server + Postgres, not static hosting).
-  output: 'standalone',
+  ...(process.env.DOCKER_STANDALONE === '1' ? { output: 'standalone' as const } : {}),
 };
 
 export default nextConfig;

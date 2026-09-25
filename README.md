@@ -81,9 +81,33 @@ docker-compose.yml  # app + postgres:16-alpine with healthchecks
 - **PDF/PNG are lazy-loaded** (`html2pdf.js`/`html2canvas` via dynamic `import()`) so the first load stays light on mobile networks.
 - **No GitHub Pages.** Pages is static-only and cannot run Next.js server code or Postgres — deployment is Docker (any VPS) via the GHCR image. See below.
 
-## 🌐 Deployment (VPS)
+## 🌐 Deployment
 
-1. On push to `main`, CI lints, tests, migrates a scratch DB, and builds; then the Docker workflow publishes `ghcr.io/xshyn/elect-invoice:latest`.
+### Vercel + Neon (recommended, free)
+
+Vercel runs both the frontend and the backend (Server Actions become serverless
+functions); Neon provides the free PostgreSQL. No VPS needed.
+
+1. **Push the repo to GitHub** (`git push -u origin main`).
+2. **Create the database** at [neon.tech](https://neon.tech): new project, region
+   closest to you (e.g. US East if your users are in the US, EU if in Europe).
+   Copy two connection strings:
+   - **Pooled** (has `-pooler` in the hostname) → Vercel `DATABASE_URL`
+   - **Direct** (no `-pooler`) → Vercel `DIRECT_URL` (migrations need this)
+3. **Import into Vercel** ([vercel.com/new](https://vercel.com/new)): pick
+   `xshyn/elect-invoice`. Framework is auto-detected (Next.js) — leave the
+   Build Command alone: Vercel automatically runs the repo's `vercel-build`
+   script (`prisma generate && prisma migrate deploy && next build`), so the
+   schema is applied on every deploy.
+4. **Add Environment Variables** (Production + Preview + Development):
+   - `DATABASE_URL` = pooled string
+   - `DIRECT_URL` = direct string
+5. **Deploy.** Open the `*.vercel.app` URL, create a test invoice, check the list.
+6. Every future `git push` redeploys automatically (Preview deployments for PRs included).
+
+### VPS with Docker (alternative)
+
+1. The `docker` workflow publishes `ghcr.io/xshyn/elect-invoice:latest` on push to `main`.
 2. On the server:
    ```bash
    # docker-compose.yml pointing at the published image, or build locally:

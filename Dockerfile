@@ -21,6 +21,7 @@ ENV DATABASE_URL=$DATABASE_URL
 RUN npx prisma generate
 # DB not needed at build time: all data pages are force-dynamic.
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DOCKER_STANDALONE=1
 RUN npm run build:web
 
 # ---- runner ----

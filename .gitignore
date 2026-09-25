@@ -42,3 +42,6 @@ src/generated
 .next/
 # Agent tooling lockfile (local only)
 skills-lock.json
+
+# Vercel CLI
+.vercel
