@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { Prisma } from '../generated/prisma/client';
 import { db } from './db';
@@ -59,6 +59,7 @@ export async function createInvoice(raw: unknown): Promise<ActionResult> {
               position: i,
               desc: it.desc,
               qty: it.qty,
+              unit: it.unit ?? '',
               unitPrice: it.unitPrice,
             })),
           },
@@ -121,6 +122,7 @@ export async function updateInvoice(id: string, raw: unknown): Promise<ActionRes
               position: i,
               desc: it.desc,
               qty: it.qty,
+              unit: it.unit ?? '',
               unitPrice: it.unitPrice,
             })),
           },
@@ -160,6 +162,7 @@ export async function updateSettings(raw: unknown): Promise<ActionResult> {
   });
   revalidatePath('/');
   revalidatePath('/settings');
+  updateTag('profile');
   await touchSession();
   return { ok: true };
 }
@@ -209,7 +212,7 @@ export async function importBackup(rawJson: string): Promise<{ ok: true; count: 
           total,
           itemCount,
           items: {
-            create: input.items.map((it, i) => ({ position: i, desc: it.desc, qty: it.qty, unitPrice: it.unitPrice })),
+            create: input.items.map((it, i) => ({ position: i, desc: it.desc, qty: it.qty, unit: it.unit ?? '', unitPrice: it.unitPrice })),
           },
         },
       });

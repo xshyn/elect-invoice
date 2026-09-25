@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { Database, Download, Hash, ImagePlus, KeyRound, Palette, Plus, Ruler, Save, Store, Upload, X } from 'lucide-react';
 import type { BusinessProfile } from '../types';
 import { toFaDigits } from '../utils/persian';
 import { importBackup, updateSettings } from '../lib/actions';
@@ -21,10 +22,22 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
   const [cur, setCur] = useState('');
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
+  const [unitDraft, setUnitDraft] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof BusinessProfile>(k: K, v: BusinessProfile[K]) => setS((p) => ({ ...p, [k]: v }));
+
+  const addUnit = () => {
+    const v = unitDraft.trim();
+    if (!v) return;
+    if (s.units.includes(v)) {
+      setUnitDraft('');
+      return;
+    }
+    set('units', [...s.units, v].slice(0, 30));
+    setUnitDraft('');
+  };
 
   const flash = (m: string) => {
     setMsg(m);
@@ -37,7 +50,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
         ...s,
         phones: s.phones.map((p) => p.trim()).filter(Boolean).length ? s.phones.map((p) => p.trim()).filter(Boolean) : [''],
       });
-      flash(res.ok ? 'تنظیمات ذخیره شد ✅' : res.errors.join('، '));
+      flash(res.ok ? 'تنظیمات ذخیره شد.' : res.errors.join('، '));
     });
   };
 
@@ -58,7 +71,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
     start(async () => {
       const text = await f.text();
       const res = await importBackup(text);
-      flash(res.ok ? `${toFaDigits(res.count)} فاکتور بازیابی شد ✅` : res.errors.join('، '));
+      flash(res.ok ? `${toFaDigits(res.count)} فاکتور بازیابی شد.` : res.errors.join('، '));
     });
   };
 
@@ -71,7 +84,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
       ) : null}
 
       <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🏪 سربرگ فاکتور</h3>
+        <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100"><Store size={16} className="text-amber-600 dark:text-amber-300" /> سربرگ فاکتور</h3>
         <Field label="نام کسب‌وکار">
           <Txt value={s.name} onChange={(e) => set('name', e.target.value)} />
         </Field>
@@ -89,16 +102,17 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
                   aria-label={`حذف تلفن ${i + 1}`}
                   className="grid w-12 shrink-0 place-items-center rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-500 dark:text-rose-400"
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               ) : null}
             </div>
           ))}
           <button
             onClick={() => set('phones', [...s.phones, ''])}
-            className="w-full rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 py-2.5 text-[13px] font-bold text-slate-500 dark:text-slate-400"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 py-2.5 text-[13px] font-bold text-slate-500 dark:text-slate-400"
           >
-            ＋ افزودن شماره
+            <Plus size={15} strokeWidth={2.5} />
+            افزودن شماره
           </button>
         </div>
         <Field label="آدرس">
@@ -118,7 +132,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
             {s.logoDataUrl ? (
               <img src={s.logoDataUrl} alt="لوگو" className="h-14 w-14 rounded-xl border object-contain" />
             ) : (
-              <div className="grid h-14 w-14 place-items-center rounded-xl bg-slate-100 dark:bg-white/10 text-2xl">🖼</div>
+              <div className="grid h-14 w-14 place-items-center rounded-xl bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500"><ImagePlus size={24} /></div>
             )}
             <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleLogo(e.target.files?.[0])} />
             <div className="flex gap-2">
@@ -136,7 +150,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
       </Card>
 
       <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🔢 شماره‌گذاری و واحد پول</h3>
+        <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100"><Hash size={16} className="text-amber-600 dark:text-amber-300" /> شماره‌گذاری و واحد پول</h3>
         <div className="grid grid-cols-2 gap-2.5">
           <Field label="عنوان فرم">
             <select value={s.invoiceTitle} onChange={(e) => set('invoiceTitle', e.target.value as BusinessProfile['invoiceTitle'])} className="min-h-[46px] w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3 text-[15px] font-bold">
@@ -165,8 +179,57 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
         </Field>
       </Card>
 
+      <Card className="space-y-3 p-4">
+        <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100">
+          <Ruler size={16} className="text-amber-600 dark:text-amber-300" />
+          واحدهای اقلام
+        </h3>
+        <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
+          این واحدها هنگام تایپ در هر ردیف پیشنهاد می‌شوند؛ متن آزاد هم همیشه مجاز است.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {s.units.map((u) => (
+            <span
+              key={u}
+              className="inline-flex items-center gap-1 rounded-full bg-slate-900/5 py-1.5 pr-3 pl-1.5 text-[13px] font-bold text-slate-700 dark:bg-white/5 dark:text-slate-200"
+            >
+              {u}
+              <button
+                onClick={() => set('units', s.units.filter((x) => x !== u))}
+                aria-label={`حذف واحد ${u}`}
+                className="grid h-6 w-6 place-items-center rounded-full text-slate-400 transition hover:bg-rose-500/15 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-300"
+              >
+                <X size={13} />
+              </button>
+            </span>
+          ))}
+          {s.units.length === 0 ? <span className="text-xs text-slate-400">واحدی تعریف نشده.</span> : null}
+        </div>
+        <div className="flex gap-2">
+          <Txt
+            value={unitDraft}
+            onChange={(e) => setUnitDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addUnit();
+              }
+            }}
+            placeholder="مثلاً قرقره"
+            aria-label="واحد جدید"
+          />
+          <Btn variant="soft" onClick={addUnit} className="shrink-0">
+            <Plus size={16} strokeWidth={2.5} />
+            افزودن
+          </Btn>
+        </div>
+      </Card>
+
       <Card className="p-4">
-        <h3 className="mb-2 text-sm font-extrabold text-slate-800 dark:text-slate-100">🎨 رنگ‌بندی فرم چاپی</h3>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100">
+          <Palette size={16} className="text-amber-600 dark:text-amber-300" />
+          رنگ‌بندی فرم چاپی
+        </h3>
         <div className="grid grid-cols-4 gap-2">
           {THEMES.map((t) => (
             <button
@@ -183,11 +246,11 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
       </Card>
 
       <Btn onClick={handleSave} disabled={pending} className="w-full">
-        {pending ? '…در حال ذخیره' : '💾 ذخیره تنظیمات'}
+        {pending ? '…در حال ذخیره' : <><Save size={17} strokeWidth={2.5} /> ذخیره تنظیمات</>}
       </Btn>
 
       <Card className="space-y-3 p-4">
-        <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🔑 تغییر گذرواژه</h3>
+        <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100"><KeyRound size={16} className="text-amber-600 dark:text-amber-300" /> تغییر گذرواژه</h3>
         <Field label="گذرواژه فعلی">
           <PasswordInput value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
         </Field>
@@ -210,7 +273,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
                 setPw('');
                 setPw2('');
               }
-              flash(res.ok ? 'گذرواژه تغییر کرد ✅ (نشست‌های دیگر بسته شد)' : res.errors.join('، '));
+              flash(res.ok ? 'گذرواژه تغییر کرد (نشست‌های دیگر بسته شد).' : res.errors.join('، '));
             })
           }
         >
@@ -219,16 +282,18 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
       </Card>
 
       <Card className="space-y-2.5 p-4">
-        <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">💾 پشتیبان‌گیری</h3>
+        <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100"><Database size={16} className="text-amber-600 dark:text-amber-300" /> پشتیبان‌گیری</h3>
         <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
           داده‌ها در دیتابیس PostgreSQL خودت نگه داشته می‌شود ({toFaDigits(invoiceCount)} فاکتور). برای جابه‌جایی بین سرورها خروجی JSON بگیر.
         </p>
         <div className="grid grid-cols-2 gap-2">
           <a href="/api/backup" download className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-amber-100 dark:bg-amber-400/15 px-4 py-2.5 text-sm font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-200">
-            ⬆ خروجی JSON
+            <Upload size={16} />
+            خروجی JSON
           </a>
           <Btn onClick={() => fileRef.current?.click()} variant="outline" disabled={pending}>
-            ⬇ بازیابی JSON
+            <Download size={16} />
+            بازیابی JSON
           </Btn>
         </div>
         <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => handleImport(e.target.files?.[0])} />

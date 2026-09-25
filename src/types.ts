@@ -14,6 +14,8 @@ export interface LineItem {
   desc: string;
   /** تعداد — اعشاری هم مجاز است (متر سیم و...) */
   qty: number;
+  /** واحد اختیاری (متر، عدد، …) — متن آزاد */
+  unit: string;
   /** قیمت واحد به واحد ارز جاری */
   unitPrice: number;
 }
@@ -62,7 +64,12 @@ export interface BusinessProfile {
   /** شماره بعدی که به فاکتور جدید تخصیص می‌یابد */
   nextNumber: number;
   theme: PaperTheme;
+  /** فهرست واحدهای پیشنهادی اقلام؛ قابل ویرایش در تنظیمات */
+  units: string[];
 }
+
+/** واحدهای پیش‌فرض برقکاری — کاربر می‌تواند در تنظیمات تغییرشان دهد. */
+export const DEFAULT_UNITS: string[] = ['عدد', 'متر', 'حلقه', 'بسته', 'دستگاه', 'متر مربع', 'کیلوگرم', 'ساعت'];
 
 export const DEFAULT_BUSINESS: BusinessProfile = {
   name: 'جریان',
@@ -77,6 +84,7 @@ export const DEFAULT_BUSINESS: BusinessProfile = {
   numberPrefix: '',
   nextNumber: 101,
   theme: 'amber',
+  units: [...DEFAULT_UNITS],
 };
 
 export type SortField =

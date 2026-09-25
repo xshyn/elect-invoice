@@ -16,7 +16,7 @@ client-side PDF/PNG export, and JSON backup/restore.
 
 - 🧾 Invoice editor matching the classic Iranian paper form (brandable header, items table, numeric + written totals, signature blocks)
 - 🔢 Auto-incrementing invoice numbers (transaction-safe), Jalali date handling, Persian-digit formatting, automatic total-in-Persian-words
-- ➕ Dynamic line items with auto line totals; optional overall discount and VAT (off by default)
+- ➕ Dynamic line items with auto line totals, optional per-row **unit** (meter, count… — editable list in Settings); optional overall discount and VAT (off by default)
 - 💾 Draft autosave while typing (browser) + Persian validation messages, server-side Zod enforcement
 - 🔍 Invoice list: debounced full-text search with match highlighting, date-range / amount-range / buyer filters, **multi-level sorting**, pagination (10/25/50) — all executed in SQL
 - 🖨 Clean A4 print stylesheet + client-side **PDF** and **PNG** export (`invoice-{number}-{date}.pdf`) via one Export button (saving is part of the flow)
@@ -25,7 +25,7 @@ client-side PDF/PNG export, and JSON backup/restore.
 - 🔐 Username+password login (scrypt), 90-day sliding sessions, first-run setup, logout, password change
 - 🌙 Dark mode (system-aware, toggle, persisted) — the printed invoice paper always stays white
 - 💾 PostgreSQL storage with JSON backup export (`/api/backup`) and restore
-- 📱 Mobile-first: bottom navigation, touch-friendly cards on phones, full data table on desktop
+- 📱 Mobile-first: floating glass bottom nav, slide-in drawer menu, touch-friendly cards on phones, full data table on desktop; dark mode + reduced-motion support
 
 ## 🚀 Quickstart (Docker — recommended)
 

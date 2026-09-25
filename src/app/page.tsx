@@ -5,6 +5,7 @@ import { longFaDate } from '../utils/jalali';
 import { grandTotal } from '../utils/calc';
 import { Btn, Card, Empty } from '../components/ui';
 import { requireUser } from '../lib/auth';
+import { ArrowLeft, Hash, Plus, ReceiptText, Wallet, Zap } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-4">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-l from-slate-900 via-slate-800 to-slate-900 p-5 text-white sm:p-7">
-        <p className="text-xs text-amber-300">⚡ پنل برقکار</p>
+        <p className="inline-flex items-center gap-1 text-xs text-amber-300"><Zap size={12} /> پنل برقکار</p>
         <h2 className="mt-1 text-2xl font-black leading-9">
           سلام استاد،
           <br />
@@ -30,7 +31,8 @@ export default async function HomePage() {
             href="/new"
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-extrabold text-slate-900 dark:text-slate-100 hover:bg-amber-300"
           >
-            ＋ صدور فاکتور جدید
+            <Plus size={17} strokeWidth={2.5} />
+            صدور فاکتور جدید
           </Link>
           <Link
             href="/invoices"
@@ -43,17 +45,17 @@ export default async function HomePage() {
 
       <section className="grid grid-cols-3 gap-2.5 sm:gap-4" aria-label="آمار کلی">
         <Card className="p-3 text-center sm:p-5">
-          <div className="text-2xl">🧾</div>
+          <div className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"><ReceiptText size={22} /></div>
           <div className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 sm:text-2xl">{toFaDigits(stats.count)}</div>
           <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-xs">تعداد فاکتورها</div>
         </Card>
         <Card className="p-3 text-center sm:p-5">
-          <div className="text-2xl">💰</div>
+          <div className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"><Wallet size={22} /></div>
           <div className="mt-1 text-sm font-black text-slate-900 dark:text-slate-100 sm:text-xl">{formatFaMoney(stats.total)}</div>
           <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-xs">جمع کل ({profile.currency})</div>
         </Card>
         <Card className="p-3 text-center sm:p-5">
-          <div className="text-2xl">🔢</div>
+          <div className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"><Hash size={22} /></div>
           <div className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 sm:text-2xl">{toFaDigits(stats.nextNumber)}</div>
           <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-xs">شماره بعدی</div>
         </Card>
@@ -62,19 +64,20 @@ export default async function HomePage() {
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">آخرین فاکتورها</h3>
-          <Link href="/invoices" className="text-[13px] font-bold text-amber-700 dark:text-amber-300">
-            مشاهده همه ←
+          <Link href="/invoices" className="inline-flex items-center gap-1 text-[13px] font-bold text-amber-700 dark:text-amber-300">
+            مشاهده همه
+            <ArrowLeft size={15} />
           </Link>
         </div>
         {recent.length === 0 ? (
           <Card>
             <Empty
-              icon="🧾"
+              icon={<ReceiptText size={30} />}
               title="هنوز فاکتوری نداری"
               desc="اولین فاکتورت را در کمتر از یک دقیقه صادر کن؛ شماره و تاریخ خودکار پر می‌شود."
               action={
                 <Link href="/new">
-                  <Btn>＋ صدور اولین فاکتور</Btn>
+                  <Btn><Plus size={17} strokeWidth={2.5} /> صدور اولین فاکتور</Btn>
                 </Link>
               }
             />
@@ -84,7 +87,7 @@ export default async function HomePage() {
             {recent.map((inv) => (
               <Link key={inv.id} href={`/invoices/${inv.id}`}>
                 <Card className="flex items-center gap-3 p-3.5 transition hover:border-amber-300 hover:shadow-md">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 dark:bg-amber-400/15 text-xl">🧾</span>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"><ReceiptText size={21} /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">
                       فاکتور {toFaDigits(inv.number)} • {inv.buyerName || 'بدون نام خریدار'}

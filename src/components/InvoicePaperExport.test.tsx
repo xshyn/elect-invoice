@@ -12,8 +12,8 @@ const invoice: Invoice = {
   buyerName: 'آقای رضایی',
   buyerPhone: '0912000000',
   items: [
-    { id: 'a', desc: 'سیم افشان', qty: 2, unitPrice: 50000 },
-    { id: 'b', desc: 'کلید مینیاتوری', qty: 1, unitPrice: 25000 },
+    { id: 'a', desc: 'سیم افشان', qty: 2, unit: 'متر', unitPrice: 50000 },
+    { id: 'b', desc: 'کلید مینیاتوری', qty: 1, unit: 'عدد', unitPrice: 25000 },
   ],
   discountEnabled: false,
   discount: 0,
@@ -31,6 +31,7 @@ describe('InvoicePaperExport', () => {
   it('contains all key data', () => {
     expect(html).toContain('آقای رضایی');
     expect(html).toContain('سیم افشان');
+    expect(html).toContain('متر');
     expect(html).toContain('۱۲۵٬۰۰۰'); // 2*50000 + 25000
     expect(html).toContain('یکصد و بیست و پنج هزار تومان');
     expect(html).toContain('۱۴۰۴/۰۷/۰۳');

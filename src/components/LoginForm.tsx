@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { safeNext } from '../lib/validators';
 import { setupOrLogin } from '../lib/auth';
 import { Btn, Card, Field, PasswordInput, Txt } from './ui';
+import { Lock, Zap } from 'lucide-react';
 
 export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: string }) {
   const [pending, start] = useTransition();
@@ -28,8 +29,8 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
   return (
     <div className="mx-auto w-full max-w-sm pt-6 sm:pt-12">
       <div className="mb-5 text-center">
-        <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-3xl bg-slate-900 text-3xl shadow-xl">
-          ⚡
+        <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-3xl bg-slate-900 text-amber-300 shadow-xl">
+          <Zap size={30} strokeWidth={2.5} />
         </div>
         <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">{isSetup ? 'ساخت حساب کاربری' : 'ورود به جریان فاکتور'}</h2>
         <p className="mt-1 text-[13px] leading-5 text-slate-500 dark:text-slate-400">
@@ -87,7 +88,7 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
       </Card>
 
       <p className="mt-4 text-center text-xs leading-5 text-slate-400 dark:text-slate-500">
-        🔒 نشست تا ۹۰ روز باز می‌ماند و با هر فعالیت تمدید می‌شود.
+        <span className="inline-flex items-center justify-center gap-1"><Lock size={12} /> نشست تا ۹۰ روز باز می‌ماند و با هر فعالیت تمدید می‌شود.</span>
         <br />
         داده‌ها فقط روی سرور خودت است.
       </p>

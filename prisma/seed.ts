@@ -22,6 +22,7 @@ async function main() {
       numberPrefix: '',
       nextNumber: 101,
       theme: 'amber',
+      units: ['عدد', 'متر', 'حلقه', 'بسته', 'دستگاه', 'متر مربع', 'کیلوگرم', 'ساعت'],
     },
   });
   console.log('seed: business profile ensured');

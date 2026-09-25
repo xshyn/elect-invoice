@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { invoiceInputSchema, parseSortParam, safeNext, settingsSchema, setupSchema } from './validators';
+import { draftSchema, invoiceInputSchema, lineItemSchema, parseSortParam, safeNext, settingsSchema, setupSchema } from './validators';
 
 describe('invoice input validation', () => {
   const base = {
@@ -63,5 +63,18 @@ describe('auth validation', () => {
     expect(safeNext('https://evil.example')).toBe('/');
     expect(safeNext('//evil.example')).toBe('/');
     expect(safeNext(undefined)).toBe('/');
+  });
+});
+
+describe('line item units', () => {
+  it('unit is optional and trims', () => {
+    expect(lineItemSchema.safeParse({ desc: 'سیم', qty: 2, unitPrice: 5 }).success).toBe(true);
+    const r = lineItemSchema.safeParse({ desc: 'سیم', qty: 2, unit: '  متر ', unitPrice: 5 });
+    expect(r.success && r.data.unit).toBe('متر');
+    expect(lineItemSchema.safeParse({ desc: 'x', qty: 1, unit: 'a'.repeat(21), unitPrice: 1 }).success).toBe(false);
+  });
+  it('drafts keep units', () => {
+    const r = draftSchema.safeParse({ items: [{ desc: 'x', qty: 1, unit: 'حلقه', unitPrice: 2 }] });
+    expect(r.success && r.data.items[0].unit).toBe('حلقه');
   });
 });

@@ -8,6 +8,7 @@ import { Btn, Card, Empty } from '../../components/ui';
 import InvoicesToolbar from '../../components/InvoicesToolbar';
 import DeleteInvoiceButton from '../../components/DeleteInvoiceButton';
 import { requireUser } from '../../lib/auth';
+import { ChevronsLeft, ChevronsRight, Eye, Pencil, Plus, SearchX } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,8 +85,9 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">فاکتورها ({toFaDigits(totalCount)})</h2>
-        <Link href="/new" className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-slate-900 px-4 py-2 text-sm font-extrabold text-amber-300">
-          ＋ جدید
+        <Link href="/new" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-extrabold text-amber-300 dark:bg-amber-400 dark:text-slate-900">
+          <Plus size={16} strokeWidth={2.5} />
+          جدید
         </Link>
       </div>
 
@@ -94,13 +96,13 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
       {items.length === 0 ? (
         <Card>
           <Empty
-            icon="🔍"
+            icon={<SearchX size={30} />}
             title="چیزی پیدا نشد"
             desc={totalCount === 0 && !q ? 'هنوز فاکتوری ثبت نشده؛ اولین فاکتور را صادر کن.' : 'عبارت یا فیلتر دیگری را امتحان کن، یا فیلترها را پاک کن.'}
             action={
               totalCount === 0 && !q ? (
                 <Link href="/new">
-                  <Btn>＋ صدور فاکتور</Btn>
+                  <Btn><Plus size={17} strokeWidth={2.5} /> صدور فاکتور</Btn>
                 </Link>
               ) : undefined
             }
@@ -128,8 +130,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                   </div>
                 </Link>
                 <div className="mt-2.5 flex gap-1.5 border-t border-slate-100 dark:border-white/10 pt-2.5">
-                  <Link href={`/invoices/${inv.id}`} className="flex-1 rounded-lg bg-slate-100 dark:bg-white/10 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200">👁 مشاهده</Link>
-                  <Link href={`/edit/${inv.id}`} className="flex-1 rounded-lg bg-slate-100 dark:bg-white/10 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200">✎ ویرایش</Link>
+                  <Link href={`/invoices/${inv.id}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 dark:bg-white/10 py-2 text-xs font-bold text-slate-700 dark:text-slate-200"><Eye size={14} /> مشاهده</Link>
+                  <Link href={`/edit/${inv.id}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 dark:bg-white/10 py-2 text-xs font-bold text-slate-700 dark:text-slate-200"><Pencil size={14} /> ویرایش</Link>
                   <DeleteInvoiceButton id={inv.id} number={toFaDigits(inv.number)} compact />
                 </div>
               </Card>
@@ -182,10 +184,10 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
               صفحه {toFaDigits(safePage)} از {toFaDigits(totalPages)} • {toFaDigits(totalCount)} فاکتور
             </span>
             <div className="flex items-center gap-1.5">
-              <Link href={pageUrl(sp, 1)} aria-label="صفحه اول" className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 dark:bg-white/10 font-black ${safePage <= 1 ? 'pointer-events-none opacity-40' : ''}`}>⇥</Link>
+              <Link href={pageUrl(sp, 1)} aria-label="صفحه اول" className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300 ${safePage <= 1 ? 'pointer-events-none opacity-40' : ''}`}><ChevronsRight size={17} /></Link>
               <Link href={pageUrl(sp, Math.max(1, safePage - 1))} aria-label="صفحه قبلی" className={`h-10 rounded-xl bg-slate-100 dark:bg-white/10 px-4 py-2.5 text-sm font-bold ${safePage <= 1 ? 'pointer-events-none opacity-40' : ''}`}>قبلی</Link>
               <Link href={pageUrl(sp, Math.min(totalPages, safePage + 1))} aria-label="صفحه بعدی" className={`h-10 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-amber-300 ${safePage >= totalPages ? 'pointer-events-none opacity-40' : ''}`}>بعدی</Link>
-              <Link href={pageUrl(sp, totalPages)} aria-label="صفحه آخر" className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 dark:bg-white/10 font-black ${safePage >= totalPages ? 'pointer-events-none opacity-40' : ''}`}>⇤</Link>
+              <Link href={pageUrl(sp, totalPages)} aria-label="صفحه آخر" className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300 ${safePage >= totalPages ? 'pointer-events-none opacity-40' : ''}`}><ChevronsLeft size={17} /></Link>
             </div>
           </Card>
         </>

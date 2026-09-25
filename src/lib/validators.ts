@@ -7,6 +7,7 @@ import { z } from 'zod';
 export const lineItemSchema = z.object({
   desc: z.string().trim().min(1, 'شرح قلم الزامی است').max(500),
   qty: z.number().positive('تعداد باید بیشتر از صفر باشد'),
+  unit: z.string().trim().max(20).default(''),
   unitPrice: z.number().min(0, 'قیمت واحد نمی‌تواند منفی باشد'),
 });
 
@@ -41,6 +42,7 @@ export const settingsSchema = z.object({
   numberPrefix: z.string().trim().max(20).default(''),
   nextNumber: z.number().int().min(1),
   theme: z.enum(['amber', 'teal', 'navy', 'rose']),
+  units: z.array(z.string().trim().min(1).max(20)).max(30).default([]),
 });
 
 export type SettingsInput = z.infer<typeof settingsSchema>;
@@ -113,6 +115,7 @@ export const draftSchema = z.object({
         id: z.string().max(50).default(''),
         desc: z.string().max(500).default(''),
         qty: z.number().default(1),
+        unit: z.string().max(20).default(''),
         unitPrice: z.number().default(0),
       }),
     )

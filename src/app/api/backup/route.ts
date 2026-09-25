@@ -25,7 +25,7 @@ export async function GET() {
         title: m.title,
         buyerName: m.buyerName,
         buyerPhone: m.buyerPhone,
-        items: m.items.map((i) => ({ desc: i.desc, qty: i.qty, unitPrice: i.unitPrice })),
+        items: m.items.map((i) => ({ desc: i.desc, qty: i.qty, unit: i.unit ?? '', unitPrice: i.unitPrice })),
         discountEnabled: m.discountEnabled,
         discount: m.discount,
         taxEnabled: m.taxEnabled,

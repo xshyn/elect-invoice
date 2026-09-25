@@ -26,6 +26,8 @@ model BusinessProfile {
   numberPrefix  String   @default("")
   nextNumber    Int      @default(101)
   theme         String   @default("amber")
+  // Editable unit list (عدد، متر، …) offered per line-item; free text allowed.
+  units         String[] @default(["عدد", "متر", "حلقه", "بسته", "دستگاه", "متر مربع", "کیلوگرم", "ساعت"])
   updatedAt     DateTime @updatedAt
 }
 
@@ -66,6 +68,8 @@ model LineItem {
   desc      String
   qty       Float
   unitPrice Float
+  // Optional unit (متر، عدد، …); free text, suggestions from BusinessProfile.units.
+  unit      String  @default("")
 
   @@index([invoiceId])
 }

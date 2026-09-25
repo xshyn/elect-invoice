@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import { Zap } from 'lucide-react';
 import type { BusinessProfile, Invoice, PaperTheme } from '../types';
 import { grandTotal, lineTotal, subtotal, taxAmount } from '../utils/calc';
 import { formatFaMoney, formatFaQty, toFaDigits } from '../utils/persian';
@@ -42,7 +43,7 @@ const InvoicePaper = forwardRef<HTMLDivElement, Props>(function InvoicePaper({ i
   // سطرهای خالی برای شبیه‌ماندن به فرم کاغذی (حداقل ۵ سطر نمایشی)
   const displayRows = [...invoice.items];
   const minRows = Math.max(5, invoice.items.length);
-  while (displayRows.length < minRows) displayRows.push({ id: `blank-${displayRows.length}`, desc: '', qty: 0, unitPrice: 0 });
+  while (displayRows.length < minRows) displayRows.push({ id: `blank-${displayRows.length}`, desc: '', qty: 0, unit: '', unitPrice: 0 });
 
   return (
     <div
@@ -59,8 +60,8 @@ const InvoicePaper = forwardRef<HTMLDivElement, Props>(function InvoicePaper({ i
           {business.logoDataUrl ? (
             <img src={business.logoDataUrl} alt="لوگوی کسب‌وکار" className="h-16 w-16 shrink-0 rounded-xl border border-slate-200 object-contain" />
           ) : (
-            <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-3xl text-white ${business.theme === 'amber' ? 'bg-slate-900' : bar}`}>
-              ⚡
+            <div className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-white ${business.theme === 'amber' ? 'bg-slate-900' : bar}`}>
+              <Zap size={30} strokeWidth={2.5} />
             </div>
           )}
           <div className="min-w-0">
@@ -132,7 +133,7 @@ const InvoicePaper = forwardRef<HTMLDivElement, Props>(function InvoicePaper({ i
                     </span>
                   </td>
                   <td className="px-2 py-2 text-right font-medium">{it.desc || (isBlank ? '\u00A0' : '')}</td>
-                  <td className="px-2 py-2">{isBlank ? '' : formatFaQty(it.qty)}</td>
+                  <td className="px-2 py-2">{isBlank ? '' : <>{formatFaQty(it.qty)}{it.unit ? <span className="text-slate-500"> {it.unit}</span> : null}</>}</td>
                   <td className="px-2 py-2">{isBlank ? '' : formatFaMoney(it.unitPrice)}</td>
                   <td className="px-2 py-2 font-bold">{isBlank ? '' : formatFaMoney(lt)}</td>
                 </tr>

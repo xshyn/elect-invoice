@@ -12,6 +12,7 @@ import { Btn } from './ui';
 import ExportButton, { type ExportFormat } from './ExportButton';
 import InvoicePaper from './InvoicePaper';
 import InvoicePaperExport from './InvoicePaperExport';
+import { ArrowRight, Copy, Pencil, Printer, Trash2 } from 'lucide-react';
 
 export default function InvoiceViewClient({ invoice, business }: { invoice: Invoice; business: BusinessProfile }) {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
         date: invoice.date,
         buyerName: invoice.buyerName,
         buyerPhone: invoice.buyerPhone,
-        items: invoice.items.map((i) => ({ desc: i.desc, qty: i.qty, unitPrice: i.unitPrice })),
+        items: invoice.items.map((i) => ({ desc: i.desc, qty: i.qty, unit: i.unit ?? '', unitPrice: i.unitPrice })),
         discountEnabled: invoice.discountEnabled,
         discount: invoice.discount,
         taxEnabled: invoice.taxEnabled,
@@ -52,28 +53,30 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
     <div className="space-y-3">
       <div className="no-print flex items-center justify-between gap-2">
         <button onClick={() => router.back()} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 shadow-sm">
-          → بازگشت
+          <ArrowRight size={17} />
+          بازگشت
         </button>
         <div className="flex gap-1.5">
           <Link href={`/edit/${invoice.id}`} className="inline-flex min-h-[44px] items-center rounded-xl bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 shadow-sm">
-            ✎ ویرایش
+            <Pencil size={16} />
+            ویرایش
           </Link>
           <button
             onClick={handleClone}
             disabled={cloning}
             className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-100 dark:bg-amber-400/15 px-4 py-2 text-sm font-bold text-amber-900 dark:text-amber-200 disabled:opacity-50"
           >
-            {cloning ? '…' : '⧉ کپی'}
+            {cloning ? '…' : <><Copy size={16} /> کپی</>}
           </button>
         </div>
       </div>
 
       {/* اقدام‌ها بالای فاکتور: چاپ / خروجی / حذف */}
       <div className="no-print grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 p-3 shadow-sm sm:grid-cols-3">
-        <Btn onClick={() => window.print()}>🖨 چاپ</Btn>
+        <Btn onClick={() => window.print()}><Printer size={17} strokeWidth={2.5} /> چاپ</Btn>
         <ExportButton onExport={handleExport} onOpenChange={setExportArmed} />
         <Btn onClick={() => setConfirmDelete(true)} variant="danger">
-          🗑 حذف
+          <Trash2 size={17} strokeWidth={2.5} /> حذف
         </Btn>
       </div>
 

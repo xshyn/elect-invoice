@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteInvoice } from '../lib/actions';
+import { Trash2 } from 'lucide-react';
 
 export default function DeleteInvoiceButton({ id, number, compact }: { id: string; number: string; compact?: boolean }) {
   const [confirm, setConfirm] = useState(false);
@@ -19,7 +20,7 @@ export default function DeleteInvoiceButton({ id, number, compact }: { id: strin
             : 'rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20'
         }
       >
-        🗑 حذف
+        <span className="inline-flex items-center gap-1"><Trash2 size={14} /> حذف</span>
       </button>
     );
   }

@@ -1,5 +1,6 @@
+import { unstable_cache } from 'next/cache';
 import { db } from './db';
-import type { BusinessProfile, Invoice, LineItem } from '../types';
+import { DEFAULT_UNITS, type BusinessProfile, type Invoice, type LineItem } from '../types';
 import { grandTotal, subtotal } from '../utils/calc';
 import { toEnDigits } from '../utils/persian';
 import { jalaliStringToISO, parseJalali } from '../utils/jalali';
@@ -9,8 +10,8 @@ import type { Prisma } from '../generated/prisma/client';
 
 type InvoiceWithItems = Prisma.InvoiceGetPayload<{ include: { items: true } }>;
 
-function mapItems(rows: { id: string; desc: string; qty: number; unitPrice: number }[]): LineItem[] {
-  return rows.map((r) => ({ id: r.id, desc: r.desc, qty: r.qty, unitPrice: r.unitPrice }));
+function mapItems(rows: { id: string; desc: string; qty: number; unit: string; unitPrice: number }[]): LineItem[] {
+  return rows.map((r) => ({ id: r.id, desc: r.desc, qty: r.qty, unit: r.unit ?? '', unitPrice: r.unitPrice }));
 }
 
 export function mapInvoice(row: InvoiceWithItems): Invoice {
@@ -38,7 +39,7 @@ export function mapInvoice(row: InvoiceWithItems): Invoice {
 export function mapProfile(row: {
   name: string; tagline: string; phones: string[]; address: string; website: string;
   logoDataUrl: string; invoiceTitle: string; currency: string; wordsUnit: string;
-  numberPrefix: string; nextNumber: number; theme: string;
+  numberPrefix: string; nextNumber: number; theme: string; units: string[];
 }): BusinessProfile {
   return {
     name: row.name,
@@ -52,6 +53,7 @@ export function mapProfile(row: {
     wordsUnit: (row.wordsUnit === 'ریال' ? 'ریال' : 'تومان'),
     numberPrefix: row.numberPrefix,
     nextNumber: row.nextNumber,
+    units: row.units && row.units.length ? row.units : [...DEFAULT_UNITS],
     theme: (['amber', 'teal', 'navy', 'rose'] as const).includes(row.theme as BusinessProfile['theme'])
       ? (row.theme as BusinessProfile['theme'])
       : 'amber',
@@ -62,7 +64,7 @@ export function mapProfile(row: {
 
 export function computeTotals(input: { items: { qty: number; unitPrice: number }[]; discountEnabled: boolean; discount: number; taxEnabled: boolean; taxRate: number }) {
   const inv = {
-    items: input.items.map((i, n) => ({ id: String(n), desc: 'x', qty: i.qty, unitPrice: i.unitPrice })),
+    items: input.items.map((i, n) => ({ id: String(n), desc: 'x', qty: i.qty, unit: '', unitPrice: i.unitPrice })),
     discountEnabled: input.discountEnabled,
     discount: input.discount,
     taxEnabled: input.taxEnabled,
@@ -74,16 +76,28 @@ export function computeTotals(input: { items: { qty: number; unitPrice: number }
 /* ---------- Reads ---------- */
 
 export async function getProfile(): Promise<BusinessProfile> {
-  const row = await db.businessProfile.findUnique({ where: { id: 'default' } });
-  if (!row) {
-    return mapProfile({
-      name: 'جریان', tagline: '', phones: [''], address: '', website: '',
-      logoDataUrl: '', invoiceTitle: 'صورتحساب', currency: 'تومان',
-      wordsUnit: 'تومان', numberPrefix: '', nextNumber: 101, theme: 'amber',
-    });
-  }
-  return mapProfile(row);
+  return cachedProfile();
 }
+
+/** The profile is read on EVERY navigation (layout header) but changes
+ *  rarely: cache it for 60s and bust explicitly on save. This removes one
+ *  DB round-trip from every tab switch.
+ */
+const cachedProfile = unstable_cache(
+  async (): Promise<BusinessProfile> => {
+    const row = await db.businessProfile.findUnique({ where: { id: 'default' } });
+    if (!row) {
+      return mapProfile({
+        name: 'جریان', tagline: '', phones: [''], address: '', website: '',
+        logoDataUrl: '', invoiceTitle: 'صورتحساب', currency: 'تومان',
+        wordsUnit: 'تومان', numberPrefix: '', nextNumber: 101, theme: 'amber', units: [...DEFAULT_UNITS],
+      });
+    }
+    return mapProfile(row);
+  },
+  ['business-profile'],
+  { tags: ['profile'], revalidate: 60 },
+);
 
 export async function getInvoice(id: string): Promise<Invoice | null> {
   const row = await db.invoice.findUnique({ where: { id }, include: { items: true } });

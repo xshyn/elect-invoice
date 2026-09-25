@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { Plus, Trash2 } from 'lucide-react';
 import type { BusinessProfile, Invoice, LineItem } from '../types';
 import { grandTotal, lineTotal, subtotal, uid } from '../utils/calc';
 import { parseFaNumber, toFaDigits } from '../utils/persian';
@@ -13,9 +14,10 @@ import { Btn, Card, Field, Txt } from './ui';
 import ExportButton, { type ExportFormat } from './ExportButton';
 import InvoicePaper from './InvoicePaper';
 import InvoicePaperExport from './InvoicePaperExport';
+import { Eye, Pencil, Save } from 'lucide-react';
 
 function emptyItem(): LineItem {
-  return { id: uid(), desc: '', qty: 1, unitPrice: 0 };
+  return { id: uid(), desc: '', qty: 1, unit: '', unitPrice: 0 };
 }
 
 export type EditorMode = 'new' | 'edit' | 'clone';
@@ -46,8 +48,9 @@ export default function EditorForm({
   const [items, setItems] = useState<LineItem[]>(() => {
     if (initial && initial.items.length) return initial.items.map((i) => ({ ...i, id: uid() }));
     if (draftSeed && draftSeed.items.length)
-      return draftSeed.items.map((i) => ({ id: i.id || uid(), desc: i.desc, qty: i.qty, unitPrice: i.unitPrice }));
-    return Array.from({ length: 5 }, emptyItem);
+      return draftSeed.items.map((i) => ({ id: i.id || uid(), desc: i.desc, qty: i.qty, unit: i.unit ?? '', unitPrice: i.unitPrice }));
+    // No default rows: the user adds what they need.
+    return [];
   });
   const [discountEnabled, setDiscountEnabled] = useState(initial?.discountEnabled ?? draftSeed?.discountEnabled ?? false);
   const [discount, setDiscount] = useState(
@@ -71,7 +74,7 @@ export default function EditorForm({
     const t = setTimeout(() => {
       saveDraft({
         number, date, buyerName, buyerPhone,
-        items: items.map((it) => ({ id: it.id, desc: it.desc, qty: it.qty, unitPrice: it.unitPrice })),
+        items: items.map((it) => ({ id: it.id, desc: it.desc, qty: it.qty, unit: it.unit ?? '', unitPrice: it.unitPrice })),
         discountEnabled, discount: parseFaNumber(discount),
         taxEnabled, taxRate: parseFaNumber(taxRate), notes,
       }).then((r) => {
@@ -142,7 +145,7 @@ export default function EditorForm({
       date,
       buyerName: buyerName.trim(),
       buyerPhone: buyerPhone.trim(),
-      items: items.filter((it) => it.desc.trim()).map((it) => ({ desc: it.desc.trim(), qty: it.qty, unitPrice: it.unitPrice })),
+      items: items.filter((it) => it.desc.trim()).map((it) => ({ desc: it.desc.trim(), qty: it.qty, unit: (it.unit ?? '').trim(), unitPrice: it.unitPrice })),
       discountEnabled,
       discount: parseFaNumber(discount),
       taxEnabled,
@@ -193,10 +196,10 @@ export default function EditorForm({
         </h2>
         <div className="flex rounded-xl bg-slate-200/70 dark:bg-white/10 p-1 text-[13px] font-bold" role="tablist" aria-label="حالت نمایش">
           <button role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={`rounded-lg px-4 py-2 ${!preview ? 'bg-white dark:bg-slate-900 shadow' : 'text-slate-500 dark:text-slate-400'}`}>
-            ✎ فرم
+            <Pencil size={14} /> فرم
           </button>
           <button role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={`rounded-lg px-4 py-2 ${preview ? 'bg-white dark:bg-slate-900 shadow' : 'text-slate-500 dark:text-slate-400'}`}>
-            👁 پیش‌نمایش
+            <Eye size={14} /> پیش‌نمایش
           </button>
         </div>
       </div>
@@ -223,11 +226,11 @@ export default function EditorForm({
               onExport={handleExportDraft}
               onOpenChange={setExportArmed}
               note="خروجی از وضعیت فعلی فرم؛ برای ثبت، جداگانه ذخیره کن."
-              label="⬇ خروجی"
+              label="خروجی"
               className="flex-1"
             />
             <Btn onClick={handleSave} disabled={pending} className="flex-1">
-              {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
+              {pending ? '…در حال ذخیره' : <><Save size={17} strokeWidth={2.5} /> ذخیره فاکتور</>}
             </Btn>
           </div>
         </div>
@@ -251,8 +254,8 @@ export default function EditorForm({
             {mode === 'new' ? (
               <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
                 <span>
-                  💾 پیش‌نویس در دیتابیس ذخیره می‌شود
-                  {draftState === 'saving' ? '…' : draftState === 'saved' ? ` ✓${draftSavedAt ? ` (${draftSavedAt})` : ''}` : ''}
+                  پیش‌نویس در دیتابیس ذخیره می‌شود
+                  {draftState === 'saving' ? '…' : draftState === 'saved' ? ` (ذخیره شد${draftSavedAt ? ` ${draftSavedAt}` : ''})` : ''}
                   ؛ با هر دستگاهی ادامه بده.
                 </span>
                 {draftState === 'saved' ? (
@@ -269,6 +272,18 @@ export default function EditorForm({
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">اقلام ({toFaDigits(items.length)})</h3>
               <span className="text-xs text-slate-400 dark:text-slate-500">جمع: {toFaDigits(subtotal(draftInv).toLocaleString('en-US'))}</span>
             </div>
+            {items.length === 0 ? (
+              <button
+                onClick={() => setItems([emptyItem()])}
+                className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/60 px-4 py-8 text-amber-800 transition hover:bg-amber-100 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20"
+              >
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-400 text-slate-900 shadow-lg shadow-amber-500/30">
+                  <Plus size={24} strokeWidth={2.5} />
+                </span>
+                <span className="text-sm font-extrabold">افزودن اولین قلم</span>
+                <span className="text-xs opacity-70">شرح، تعداد، واحد و قیمت را وارد کن</span>
+              </button>
+            ) : null}
             <div className="space-y-2.5">
               {items.map((it, idx) => (
                 <div key={it.id} className="rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3">
@@ -276,15 +291,14 @@ export default function EditorForm({
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-xs font-black text-amber-300">
                       {toFaDigits(idx + 1)}
                     </span>
-                    {items.length > 1 ? (
-                      <button
-                        onClick={() => setItems((p) => p.filter((x) => x.id !== it.id))}
-                        aria-label={`حذف ردیف ${idx + 1}`}
-                        className="rounded-lg px-2.5 py-1 text-xs font-bold text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20"
-                      >
-                        حذف ✕
-                      </button>
-                    ) : null}
+                    <button
+                      onClick={() => setItems((p) => p.filter((x) => x.id !== it.id))}
+                      aria-label={`حذف ردیف ${idx + 1}`}
+                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20"
+                    >
+                      <Trash2 size={14} />
+                      حذف
+                    </button>
                   </div>
                   <Field label="شرح کالا یا خدمات">
                     <Txt value={it.desc} onChange={(e) => updateItem(it.id, { desc: e.target.value })} placeholder="مثلاً سیم‌ افشان ۲/۵ متری…" />
@@ -299,6 +313,15 @@ export default function EditorForm({
                         aria-label={`تعداد ردیف ${idx + 1}`}
                       />
                     </Field>
+                    <Field label="واحد (اختیاری)">
+                      <Txt
+                        value={it.unit ?? ''}
+                        onChange={(e) => updateItem(it.id, { unit: e.target.value })}
+                        placeholder="عدد"
+                        list="jaryan-units"
+                        aria-label={`واحد ردیف ${idx + 1}`}
+                      />
+                    </Field>
                     <Field label="قیمت واحد">
                       <Txt
                         value={it.unitPrice === 0 && !it.desc ? '' : String(it.unitPrice)}
@@ -308,22 +331,26 @@ export default function EditorForm({
                         aria-label={`قیمت واحد ردیف ${idx + 1}`}
                       />
                     </Field>
-                    <div>
-                      <span className="mb-1.5 block text-[13px] font-bold text-slate-600 dark:text-slate-300">قیمت کل</span>
-                      <div className="rounded-xl bg-slate-900 px-2 py-2.5 text-center text-sm font-black text-amber-300">
-                        {toFaDigits(lineTotal(it.qty, it.unitPrice).toLocaleString('en-US'))}
-                      </div>
-                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between rounded-xl bg-slate-900 px-3 py-2 text-sm font-black text-amber-300">
+                    <span className="text-xs font-bold opacity-80">قیمت کل</span>
+                    <span>{toFaDigits(lineTotal(it.qty, it.unitPrice).toLocaleString('en-US'))}</span>
                   </div>
                 </div>
               ))}
             </div>
             <button
               onClick={() => setItems((p) => [...p, emptyItem()])}
-              className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-400/40 bg-amber-50 dark:bg-amber-400/10 py-3 text-sm font-extrabold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-400/20"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-400/40 bg-amber-50 dark:bg-amber-400/10 py-3 text-sm font-extrabold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-400/20"
             >
-              ＋ افزودن ردیف
+              <Plus size={17} strokeWidth={2.5} />
+              افزودن ردیف
             </button>
+            <datalist id="jaryan-units">
+              {profile.units.map((u) => (
+                <option key={u} value={u} />
+              ))}
+            </datalist>
           </Card>
 
           <Card className="space-y-3 p-4">
@@ -368,11 +395,11 @@ export default function EditorForm({
               onExport={handleExportDraft}
               onOpenChange={setExportArmed}
               note="خروجی از وضعیت فعلی فرم؛ برای ثبت، جداگانه ذخیره کن."
-              label="⬇ خروجی"
+              label="خروجی"
               className="flex-1"
             />
             <Btn onClick={handleSave} disabled={pending} className="flex-[2]">
-              {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
+              {pending ? '…در حال ذخیره' : <><Save size={17} strokeWidth={2.5} /> ذخیره فاکتور</>}
             </Btn>
           </div>
 

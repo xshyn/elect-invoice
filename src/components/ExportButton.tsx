@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Btn } from './ui';
+import { Download, FileText, Image as ImageIcon } from 'lucide-react';
 
 export type ExportFormat = 'pdf' | 'png';
 
@@ -12,7 +13,7 @@ export default function ExportButton({
   onExport,
   onOpenChange,
   note = 'خروجی از همین فاکتور.',
-  label = '⬇ خروجی',
+  label = 'خروجی',
   className = '',
 }: {
   onExport: (format: ExportFormat) => Promise<void>;
@@ -55,6 +56,7 @@ export default function ExportButton({
         }}
         className={className}
       >
+        <Download size={17} strokeWidth={2.5} />
         {label}
       </Btn>
 
@@ -83,14 +85,14 @@ export default function ExportButton({
                 disabled={busy !== null}
                 className="rounded-2xl border-2 border-slate-900 bg-slate-900 py-3.5 text-sm font-extrabold text-amber-300 disabled:opacity-50 dark:border-amber-400 dark:bg-amber-400 dark:text-slate-900"
               >
-                {busy === 'pdf' ? '…' : '📄 PDF'}
+                {busy === 'pdf' ? '…' : <><FileText size={17} /> PDF</>}
               </button>
               <button
                 onClick={() => choose('png')}
                 disabled={busy !== null}
                 className="rounded-2xl border-2 border-slate-200 bg-white py-3.5 text-sm font-extrabold text-slate-700 disabled:opacity-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
               >
-                {busy === 'png' ? '…' : '🖼 PNG'}
+                {busy === 'png' ? '…' : <><ImageIcon size={17} /> PNG</>}
               </button>
             </div>
             <button

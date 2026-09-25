@@ -56,7 +56,7 @@ const InvoicePaperExport = forwardRef<HTMLDivElement, { invoice: Invoice; busine
 
     const rows = [...invoice.items];
     while (rows.length < Math.max(5, invoice.items.length))
-      rows.push({ id: `blank-${rows.length}`, desc: '', qty: 0, unitPrice: 0 });
+      rows.push({ id: `blank-${rows.length}`, desc: '', qty: 0, unit: '', unitPrice: 0 });
 
     return (
       <div ref={ref} dir="rtl" style={{ background: PAPER, color: INK, width: 800, fontSize: 13, lineHeight: 1.7 }}>
@@ -74,7 +74,7 @@ const InvoicePaperExport = forwardRef<HTMLDivElement, { invoice: Invoice; busine
                         {business.logoDataUrl ? (
                           <img src={business.logoDataUrl} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} />
                         ) : (
-                          <span style={{ fontSize: 40 }}>⚡</span>
+                          <span style={{ display: 'inline-block', width: 64, height: 64, lineHeight: '64px', textAlign: 'center', fontSize: 30, fontWeight: 900, background: '#0f172a', color: '#fbbf24', borderRadius: 12 }}>{(business.name || 'ج')[0]}</span>
                         )}
                       </td>
                       <td style={{ verticalAlign: 'middle' }}>
@@ -155,7 +155,7 @@ const InvoicePaperExport = forwardRef<HTMLDivElement, { invoice: Invoice; busine
                     </span>
                   </td>
                   <td style={{ ...cell, textAlign: 'right' }}>{blank ? ' ' : it.desc}</td>
-                  <td style={cell}>{blank ? '' : formatFaQty(it.qty)}</td>
+                  <td style={cell}>{blank ? '' : <>{formatFaQty(it.qty)}{it.unit ? ` ${it.unit}` : ''}</>}</td>
                   <td style={cell}>{blank ? '' : formatFaMoney(it.unitPrice)}</td>
                   <td style={{ ...cell, fontWeight: 800 }}>{blank ? '' : formatFaMoney(lineTotal(it.qty, it.unitPrice))}</td>
                 </tr>

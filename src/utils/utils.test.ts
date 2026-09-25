@@ -43,8 +43,8 @@ describe('calc', () => {
     expect(lineTotal(-1, 5)).toBe(0);
     const inv = {
       items: [
-        { id: 'a', desc: 'سیم', qty: 2, unitPrice: 50000 },
-        { id: 'b', desc: 'کلید', qty: 1, unitPrice: 25000 },
+        { id: 'a', desc: 'سیم', qty: 2, unit: 'متر', unitPrice: 50000 },
+        { id: 'b', desc: 'کلید', qty: 1, unit: '', unitPrice: 25000 },
       ],
       discountEnabled: false,
       discount: 0,

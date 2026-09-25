@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card, Txt } from './ui';
+import { ArrowUpDown, ChevronDown, ChevronUp, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
 
 const PAGE_SIZES = [10, 25, 50];
 const SORT_FIELDS = [
@@ -66,8 +67,8 @@ export default function InvoicesToolbar({ activeFilterCount }: { activeFilterCou
           aria-label="جست‌وجو در فاکتورها"
           className="py-3 pr-11"
         />
-        <span aria-hidden className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-slate-300">
-          ⌕
+        <span aria-hidden className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600">
+          <Search size={19} />
         </span>
         {q ? (
           <button
@@ -75,16 +76,17 @@ export default function InvoicesToolbar({ activeFilterCount }: { activeFilterCou
             aria-label="پاک کردن جست‌وجو"
             className="absolute left-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
           >
-            ✕
+            <X size={16} />
           </button>
         ) : null}
       </div>
 
       <Card className="p-3 sm:p-4">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[13px] font-extrabold text-slate-700 dark:text-slate-200">⇅ مرتب‌سازی چندسطحی</span>
-          <button onClick={addSortRule} className="text-[13px] font-bold text-amber-700 dark:text-amber-300" disabled={sortRules.length >= SORT_FIELDS.length}>
-            ＋ افزودن سطح
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-extrabold text-slate-700 dark:text-slate-200"><ArrowUpDown size={15} className="text-amber-600 dark:text-amber-300" /> مرتب‌سازی چندسطحی</span>
+          <button onClick={addSortRule} className="inline-flex items-center gap-1 text-[13px] font-bold text-amber-700 dark:text-amber-300" disabled={sortRules.length >= SORT_FIELDS.length}>
+            <Plus size={14} strokeWidth={2.5} />
+            افزودن سطح
           </button>
         </div>
         <div className="space-y-2">
@@ -120,9 +122,9 @@ export default function InvoicesToolbar({ activeFilterCount }: { activeFilterCou
                   <button
                     onClick={() => updateSort(sortRules.filter((_, j) => j !== i))}
                     aria-label={`حذف سطح ${i + 1}`}
-                    className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-xl text-slate-400 dark:text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-600"
+                    className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-xl text-slate-400 dark:text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-600 dark:hover:text-rose-300"
                   >
-                    ✕
+                    <X size={16} />
                   </button>
                 ) : null}
               </div>
@@ -136,15 +138,16 @@ export default function InvoicesToolbar({ activeFilterCount }: { activeFilterCou
             aria-expanded={showFilters}
             className="flex flex-1 items-center justify-between rounded-xl bg-slate-50 dark:bg-white/5 px-3 py-2.5 text-[13px] font-extrabold text-slate-600 dark:text-slate-300"
           >
-            <span>
-              ⚙ فیلترها
+            <span className="inline-flex items-center gap-1.5">
+              <SlidersHorizontal size={15} />
+              فیلترها
               {activeFilterCount > 0 ? (
                 <span className="mr-2 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] text-slate-900 dark:text-slate-100">
                   {activeFilterCount.toLocaleString('fa-IR')}
                 </span>
               ) : null}
             </span>
-            <span>{showFilters ? '▴' : '▾'}</span>
+            <span>{showFilters ? <ChevronUp size={17} /> : <ChevronDown size={17} />}</span>
           </button>
           <select
             value={filterVal('size') || '10'}
