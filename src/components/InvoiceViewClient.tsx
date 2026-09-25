@@ -11,19 +11,23 @@ import { exportInvoicePDF, exportInvoicePNG } from '../lib/export';
 import { Btn } from './ui';
 import ExportButton, { type ExportFormat } from './ExportButton';
 import InvoicePaper from './InvoicePaper';
+import InvoicePaperExport from './InvoicePaperExport';
 
 export default function InvoiceViewClient({ invoice, business }: { invoice: Invoice; business: BusinessProfile }) {
   const router = useRouter();
-  const paperRef = useRef<HTMLDivElement>(null);
+  const [exportArmed, setExportArmed] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [cloning, startClone] = useTransition();
 
   const fileBase = `invoice-${invoice.number.replace(/\s+/g, '-')}-${invoice.date.replaceAll('/', '-')}`;
 
   const handleExport = async (format: ExportFormat) => {
-    if (!paperRef.current) throw new Error('کاغذ فاکتور آماده نیست؛ دوباره امتحان کن.');
-    if (format === 'pdf') await exportInvoicePDF(paperRef.current, `${fileBase}.pdf`);
-    else await exportInvoicePNG(paperRef.current, `${fileBase}.png`);
+    // Hidden export paper mounts with the dialog; wait a tick for layout.
+    await new Promise((r) => setTimeout(r, 60));
+    if (!exportRef.current) throw new Error('کاغذ فاکتور آماده نیست؛ دوباره امتحان کن.');
+    if (format === 'pdf') await exportInvoicePDF(exportRef.current, `${fileBase}.pdf`);
+    else await exportInvoicePNG(exportRef.current, `${fileBase}.png`);
   };
 
   const handleClone = () => {
@@ -64,15 +68,23 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
         </div>
       </div>
 
-      <InvoicePaper ref={paperRef} invoice={invoice} business={business} />
-
+      {/* اقدام‌ها بالای فاکتور: چاپ / خروجی / حذف */}
       <div className="no-print grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 p-3 shadow-sm sm:grid-cols-3">
         <Btn onClick={() => window.print()}>🖨 چاپ</Btn>
-        <ExportButton onExport={handleExport} />
+        <ExportButton onExport={handleExport} onOpenChange={setExportArmed} />
         <Btn onClick={() => setConfirmDelete(true)} variant="danger">
           🗑 حذف
         </Btn>
       </div>
+
+      <InvoicePaper invoice={invoice} business={business} />
+
+      {/* کاغذ مخصوص خروجی: همیشه روشن، فقط جدول/رنگ سازگار با کانوس */}
+      {exportArmed ? (
+        <div aria-hidden className="no-print" style={{ position: 'fixed', top: 0, left: '-10000px', width: 820, pointerEvents: 'none' }}>
+          <InvoicePaperExport ref={exportRef} invoice={invoice} business={business} />
+        </div>
+      ) : null}
 
       <p className="no-print text-center text-xs leading-5 text-slate-400 dark:text-slate-500">
         جمع کل: {toFaDigits(grandTotal(invoice).toLocaleString('en-US'))} {invoice.currency} • نام فایل خروجی: {fileBase}.pdf

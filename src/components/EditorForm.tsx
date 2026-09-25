@@ -12,6 +12,7 @@ import { exportInvoicePDF, exportInvoicePNG } from '../lib/export';
 import { Btn, Card, Field, Txt } from './ui';
 import ExportButton, { type ExportFormat } from './ExportButton';
 import InvoicePaper from './InvoicePaper';
+import InvoicePaperExport from './InvoicePaperExport';
 
 function emptyItem(): LineItem {
   return { id: uid(), desc: '', qty: 1, unitPrice: 0 };
@@ -59,9 +60,8 @@ export default function EditorForm({
   const [errors, setErrors] = useState<string[]>([]);
   const [draftState, setDraftState] = useState<'idle' | 'saving' | 'saved'>(draftSeed ? 'saved' : 'idle');
   const [draftSavedAt, setDraftSavedAt] = useState('');
-  // Export-before-save flow
+  // Export flow (no saving involved)
   const [exportArmed, setExportArmed] = useState(false);
-  const [exportedId, setExportedId] = useState<string | null>(null);
   const hiddenPaperRef = useRef<HTMLDivElement>(null);
 
   // Autosave draft to the DATABASE (debounced). Empty form cleans the draft.
@@ -174,19 +174,11 @@ export default function EditorForm({
     });
   };
 
-  /** Export flow: validate → save → export the saved invoice. */
-  const handleExportSave = async (format: ExportFormat) => {
-    const errs = validate();
-    setErrors(errs);
-    if (errs.length) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      throw new Error('اول خطاهای فرم را اصلاح کن.');
-    }
-    const res = await persist();
-    if (!res.ok) throw new Error(res.errors[0] ?? 'ذخیره ناموفق بود.');
-    setExportedId(res.id);
+  /** Export flow: exports the CURRENT form state as-is — no saving involved.
+   *  Saving stays an explicit, separate action (the Save button). */
+  const handleExportDraft = async (format: ExportFormat) => {
     const fb = `invoice-${(number.trim() || '…').replace(/\s+/g, '-')}-${(parseJalali(date) ? date : todayJalaliString()).replaceAll('/', '-')}`;
-    // Hidden paper mounts when the dialog opens; wait a tick for layout.
+    // Hidden export paper mounts with the dialog; wait a tick for layout.
     await new Promise((r) => setTimeout(r, 60));
     if (!hiddenPaperRef.current) throw new Error('کاغذ فاکتور آماده نیست؛ دوباره امتحان کن.');
     if (format === 'pdf') await exportInvoicePDF(hiddenPaperRef.current, `${fb}.pdf`);
@@ -227,7 +219,13 @@ export default function EditorForm({
             <Btn onClick={() => setPreview(false)} variant="outline" className="flex-1">
               بازگشت به فرم
             </Btn>
-            <ExportButton onExport={handleExportSave} onOpenChange={setExportArmed} label="💾⬇ ذخیره و خروجی" className="flex-1" />
+            <ExportButton
+              onExport={handleExportDraft}
+              onOpenChange={setExportArmed}
+              note="خروجی از وضعیت فعلی فرم؛ برای ثبت، جداگانه ذخیره کن."
+              label="⬇ خروجی"
+              className="flex-1"
+            />
             <Btn onClick={handleSave} disabled={pending} className="flex-1">
               {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
             </Btn>
@@ -366,25 +364,22 @@ export default function EditorForm({
             <Btn onClick={() => router.back()} variant="outline" className="flex-1" disabled={pending}>
               انصراف
             </Btn>
-            <ExportButton onExport={handleExportSave} onOpenChange={setExportArmed} label="💾⬇ ذخیره و خروجی" className="flex-1" />
+            <ExportButton
+              onExport={handleExportDraft}
+              onOpenChange={setExportArmed}
+              note="خروجی از وضعیت فعلی فرم؛ برای ثبت، جداگانه ذخیره کن."
+              label="⬇ خروجی"
+              className="flex-1"
+            />
             <Btn onClick={handleSave} disabled={pending} className="flex-[2]">
               {pending ? '…در حال ذخیره' : '💾 ذخیره فاکتور'}
             </Btn>
           </div>
 
-          {exportedId ? (
-            <div className="no-print flex items-center justify-between gap-2 rounded-2xl bg-teal-50 dark:bg-teal-500/15 px-4 py-3 text-[13px] font-bold text-teal-800 dark:text-teal-200">
-              <span>✅ ذخیره و خروجی انجام شد.</span>
-              <button onClick={() => router.push(`/invoices/${exportedId}`)} className="shrink-0 underline underline-offset-4">
-                مشاهده فاکتور ←
-              </button>
-            </div>
-          ) : null}
-
-          {/* کاغذ پنهان برای خروجی‌گرفتن بلافاصله بعد از ذخیره */}
+          {/* کاغذ مخصوص خروجی: همیشه روشن، فقط جدول/رنگ سازگار با کانوس */}
           {exportArmed ? (
             <div aria-hidden className="no-print" style={{ position: 'fixed', top: 0, left: '-10000px', width: 820, pointerEvents: 'none' }}>
-              <InvoicePaper ref={hiddenPaperRef} invoice={draftInv} business={profile} shadow={false} />
+              <InvoicePaperExport ref={hiddenPaperRef} invoice={draftInv} business={profile} />
             </div>
           ) : null}
         </div>

@@ -11,12 +11,15 @@ export type ExportFormat = 'pdf' | 'png';
 export default function ExportButton({
   onExport,
   onOpenChange,
+  note = 'خروجی از همین فاکتور.',
   label = '⬇ خروجی',
   className = '',
 }: {
   onExport: (format: ExportFormat) => Promise<void>;
   /** Fires on dialog open/close (lets callers mount an off-screen paper). */
   onOpenChange?: (open: boolean) => void;
+  /** Small hint line under the title. */
+  note?: string;
   label?: string;
   className?: string;
 }) {
@@ -68,7 +71,7 @@ export default function ExportButton({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-extrabold text-slate-900 dark:text-slate-100">قالب خروجی</h3>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">فاکتور ذخیره می‌شود، بعد فایل ساخته می‌شود.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{note}</p>
             {error ? (
               <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
                 {error}
