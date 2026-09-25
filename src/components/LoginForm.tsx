@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { safeNext } from '../lib/validators';
 import { setupOrLogin } from '../lib/auth';
-import { Btn, Card, Field, Txt } from './ui';
+import { Btn, Card, Field, PasswordInput, Txt } from './ui';
 
 export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: string }) {
   const [pending, start] = useTransition();
@@ -59,8 +59,7 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
           </Field>
         ) : null}
         <Field label={isSetup ? 'گذرواژه (حداقل ۸ حرف)' : 'گذرواژه'}>
-          <Txt
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete={isSetup ? 'new-password' : 'current-password'}
@@ -71,8 +70,7 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
         </Field>
         {isSetup ? (
           <Field label="تکرار گذرواژه">
-            <Txt
-              type="password"
+            <PasswordInput
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password"

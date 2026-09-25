@@ -1,4 +1,6 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+'use client';
+
+import { useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
 
 export function Btn({
   children,
@@ -50,6 +52,31 @@ export function Txt({ className = '', ...rest }: InputHTMLAttributes<HTMLInputEl
       {...rest}
       className={`w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-600 dark:focus:ring-amber-400/20 ${className}`}
     />
+  );
+}
+
+export function PasswordInput({
+  className = '',
+  ...rest
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative block">
+      <input
+        {...rest}
+        type={show ? 'text' : 'password'}
+        className={`w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-12 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-600 dark:focus:ring-amber-400/20 ${className}`}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        aria-label={show ? 'پنهان کردن گذرواژه' : 'نمایش گذرواژه'}
+        aria-pressed={show}
+        className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-300"
+      >
+        {show ? '🙈' : '👁'}
+      </button>
+    </span>
   );
 }
 

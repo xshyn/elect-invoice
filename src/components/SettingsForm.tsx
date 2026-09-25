@@ -5,7 +5,7 @@ import type { BusinessProfile } from '../types';
 import { toFaDigits } from '../utils/persian';
 import { importBackup, updateSettings } from '../lib/actions';
 import { changePassword } from '../lib/auth';
-import { Btn, Card, Field, Txt } from './ui';
+import { Btn, Card, Field, PasswordInput, Txt } from './ui';
 
 const THEMES = [
   { value: 'amber', label: 'کهربایی', swatch: 'bg-amber-400' },
@@ -189,14 +189,14 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
       <Card className="space-y-3 p-4">
         <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🔑 تغییر گذرواژه</h3>
         <Field label="گذرواژه فعلی">
-          <Txt type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
+          <PasswordInput value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
         </Field>
         <div className="grid grid-cols-2 gap-2.5">
           <Field label="گذرواژه جدید (حداقل ۸ حرف)">
-            <Txt type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
+            <PasswordInput value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
           </Field>
           <Field label="تکرار گذرواژه جدید">
-            <Txt type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" />
+            <PasswordInput value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" />
           </Field>
         </div>
         <Btn

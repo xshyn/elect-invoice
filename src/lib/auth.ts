@@ -2,6 +2,7 @@
 
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Prisma } from '../generated/prisma/client';
 import { db } from './db';
 import { hashPassword, verifyPassword } from './password';
 import { getSessionSecret, signSession, verifySession } from './session-token';
@@ -143,8 +144,14 @@ export async function setupOrLogin(raw: unknown, isSetup: boolean): Promise<Auth
         data: { username: input.username, displayName: input.displayName, passwordHash: hashPassword(input.password) },
       });
       await createSession(user.id, (await headers()).get('user-agent') ?? '');
-    } catch {
-      return { ok: false, errors: ['این نام کاربری قبلاً گرفته شده.'] };
+    } catch (e) {
+      // P2002 = genuine duplicate. Anything else is a server problem —
+      // NEVER report it as "taken": that hides the real cause.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        return { ok: false, errors: ['این نام کاربری قبلاً گرفته شده.'] };
+      }
+      console.error('[auth:setup] unexpected signup failure:', e);
+      return { ok: false, errors: ['خطای سرور هنگام ساخت حساب؛ لاگ سرور را بررسی کن و دوباره امتحان کن.'] };
     }
     redirect(safeNext(input.next));
   }
