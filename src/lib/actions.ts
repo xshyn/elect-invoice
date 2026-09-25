@@ -7,6 +7,7 @@ import { db } from './db';
 import { computeTotals } from './invoices';
 import { invoiceInputSchema, settingsSchema, type InvoiceInput, type SettingsInput } from './validators';
 import { jalaliStringToISO, parseJalali, todayJalaliString } from '../utils/jalali';
+import { requireUserId, touchSession } from './auth';
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; errors: string[] };
 
@@ -14,11 +15,14 @@ function zodErrors(e: { issues: { message: string }[] }): string[] {
   return e.issues.map((i) => i.message);
 }
 
+const NOT_AUTHED: ActionResult = { ok: false, errors: ['وارد نشده‌ای؛ دوباره وارد شو.'] };
+
 /** Creates an invoice inside one transaction: number allocation (counter bump)
  *  and row insert are atomic, so two concurrent submits can't share a number —
  *  the UNIQUE constraint on `number` is the backstop.
  */
 export async function createInvoice(raw: unknown): Promise<ActionResult> {
+  if (!(await requireUserId())) return NOT_AUTHED;
   const parsed = invoiceInputSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
   const input: InvoiceInput = parsed.data;
@@ -71,6 +75,7 @@ export async function createInvoice(raw: unknown): Promise<ActionResult> {
 
     revalidatePath('/');
     revalidatePath('/invoices');
+    await touchSession();
     return { ok: true, id };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -81,6 +86,7 @@ export async function createInvoice(raw: unknown): Promise<ActionResult> {
 }
 
 export async function updateInvoice(id: string, raw: unknown): Promise<ActionResult> {
+  if (!(await requireUserId())) return NOT_AUTHED;
   const parsed = invoiceInputSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
   const input: InvoiceInput = parsed.data;
@@ -124,6 +130,7 @@ export async function updateInvoice(id: string, raw: unknown): Promise<ActionRes
     revalidatePath('/');
     revalidatePath('/invoices');
     revalidatePath(`/invoices/${id}`);
+    await touchSession();
     return { ok: true, id };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -134,6 +141,7 @@ export async function updateInvoice(id: string, raw: unknown): Promise<ActionRes
 }
 
 export async function deleteInvoice(id: string): Promise<void> {
+  if (!(await requireUserId())) redirect('/login');
   await db.invoice.delete({ where: { id } });
   revalidatePath('/');
   revalidatePath('/invoices');
@@ -141,6 +149,7 @@ export async function deleteInvoice(id: string): Promise<void> {
 }
 
 export async function updateSettings(raw: unknown): Promise<ActionResult> {
+  if (!(await requireUserId())) return NOT_AUTHED;
   const parsed = settingsSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, errors: zodErrors(parsed.error) };
   const s: SettingsInput = parsed.data;
@@ -151,6 +160,7 @@ export async function updateSettings(raw: unknown): Promise<ActionResult> {
   });
   revalidatePath('/');
   revalidatePath('/settings');
+  await touchSession();
   return { ok: true };
 }
 
@@ -158,6 +168,7 @@ export async function updateSettings(raw: unknown): Promise<ActionResult> {
  *  must confirm before calling.
  */
 export async function importBackup(rawJson: string): Promise<{ ok: true; count: number } | { ok: false; errors: string[] }> {
+  if (!(await requireUserId())) return { ok: false, errors: ['وارد نشده‌ای؛ دوباره وارد شو.'] };
   let data: unknown;
   try {
     data = JSON.parse(rawJson);
@@ -211,6 +222,7 @@ export async function importBackup(rawJson: string): Promise<{ ok: true; count: 
   });
   revalidatePath('/');
   revalidatePath('/invoices');
+  await touchSession();
   return { ok: true, count: rows.length };
 }
 

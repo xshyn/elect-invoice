@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useTransition, type ReactNode } from 'react';
+import { logout } from '../lib/auth';
+import type { SessionUser } from '../lib/auth';
 
 const TABS = [
   { href: '/', label: 'خانه', icon: '⚡' },
@@ -20,12 +22,24 @@ export default function Shell({
   children,
   businessName,
   tagline,
+  user,
 }: {
   children: ReactNode;
   businessName: string;
   tagline: string;
+  user: SessionUser | null;
 }) {
   const path = usePathname();
+  const [pending, start] = useTransition();
+
+  // Login screen renders without app chrome.
+  if (path === '/login') {
+    return (
+      <div className="app-shell mx-auto min-h-dvh w-full max-w-5xl px-3 pt-3 sm:px-6">
+        <main>{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell mx-auto min-h-dvh w-full max-w-5xl px-3 pb-28 pt-3 sm:px-6 md:pb-10">
@@ -42,8 +56,21 @@ export default function Shell({
             <h1 className="truncate text-lg font-extrabold leading-7">
               {businessName || 'جریان'} <span className="text-amber-300">فاکتور</span>
             </h1>
-            <p className="truncate text-xs text-slate-300">{tagline || 'صدور فاکتور فارسی برای برقکاران'}</p>
+            <p className="truncate text-xs text-slate-300">
+              {user ? `👤 ${user.displayName || user.username}` : tagline || 'صدور فاکتور فارسی برای برقکاران'}
+            </p>
           </div>
+          {user ? (
+            <button
+              onClick={() => start(() => logout())}
+              disabled={pending}
+              aria-label="خروج از حساب"
+              title="خروج"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/10 text-lg hover:bg-white/20 disabled:opacity-50"
+            >
+              ⎋
+            </button>
+          ) : null}
           <Link
             href="/new"
             className="hidden shrink-0 items-center gap-1 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-900 hover:bg-amber-300 sm:inline-flex"

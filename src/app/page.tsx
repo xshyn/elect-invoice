@@ -4,10 +4,12 @@ import { formatFaMoney, toFaDigits } from '../utils/persian';
 import { longFaDate } from '../utils/jalali';
 import { grandTotal } from '../utils/calc';
 import { Btn, Card, Empty } from '../components/ui';
+import { requireUser } from '../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
+  await requireUser('/');
   const [stats, recent, profile] = await Promise.all([
     dashboardStats(),
     recentInvoices(5),

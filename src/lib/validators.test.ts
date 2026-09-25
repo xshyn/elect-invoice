@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { invoiceInputSchema, parseSortParam, settingsSchema } from './validators';
+import { invoiceInputSchema, parseSortParam, safeNext, settingsSchema, setupSchema } from './validators';
 
 describe('invoice input validation', () => {
   const base = {
@@ -47,5 +47,21 @@ describe('sort param parsing', () => {
     ]);
     expect(parseSortParam('evil:desc', { field: 'date', dir: 'desc' })).toEqual([{ field: 'date', dir: 'desc' }]);
     expect(parseSortParam(undefined, { field: 'date', dir: 'desc' })).toEqual([{ field: 'date', dir: 'desc' }]);
+  });
+});
+
+describe('auth validation', () => {
+  it('setup requires matching passwords of min length', () => {
+    const good = { username: 'ostad', displayName: '', password: 'long-enough-1', confirm: 'long-enough-1', next: '/' };
+    expect(setupSchema.safeParse(good).success).toBe(true);
+    expect(setupSchema.safeParse({ ...good, confirm: 'different' }).success).toBe(false);
+    expect(setupSchema.safeParse({ ...good, password: 'short', confirm: 'short' }).success).toBe(false);
+    expect(setupSchema.safeParse({ ...good, username: 'x' }).success).toBe(false);
+  });
+  it('safeNext blocks open redirects', () => {
+    expect(safeNext('/invoices')).toBe('/invoices');
+    expect(safeNext('https://evil.example')).toBe('/');
+    expect(safeNext('//evil.example')).toBe('/');
+    expect(safeNext(undefined)).toBe('/');
   });
 });

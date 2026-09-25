@@ -1,10 +1,12 @@
 import { db } from '../../lib/db';
 import { getProfile } from '../../lib/invoices';
 import SettingsForm from '../../components/SettingsForm';
+import { requireUser } from '../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
+  await requireUser('/settings');
   const [profile, invoiceCount] = await Promise.all([
     getProfile(),
     db.invoice.count(),

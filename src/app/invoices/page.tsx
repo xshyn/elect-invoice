@@ -7,6 +7,7 @@ import { longFaDate } from '../../utils/jalali';
 import { Btn, Card, Empty } from '../../components/ui';
 import InvoicesToolbar from '../../components/InvoicesToolbar';
 import DeleteInvoiceButton from '../../components/DeleteInvoiceButton';
+import { requireUser } from '../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,7 @@ function Hl({ text, query }: { text: string; query: string }) {
 }
 
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<SP> }) {
+  await requireUser('/invoices');
   const sp = await searchParams;
   const q = first(sp.q);
   const from = first(sp.from);

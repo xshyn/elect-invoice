@@ -69,3 +69,29 @@ model LineItem {
 
   @@index([invoiceId])
 }
+
+// Auth: local username+password accounts. First user is created via the
+// first-run setup screen at /login (no seeded credentials by design).
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  passwordHash String
+  displayName  String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  // Long-lived sliding sessions: 90 days, refreshed on activity.
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  userAgent  String   @default("")
+
+  @@index([userId])
+  @@index([expiresAt])
+}

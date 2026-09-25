@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from 'react';
 import type { BusinessProfile } from '../types';
 import { toFaDigits } from '../utils/persian';
-import { importBackup, updateSettings } from '../lib/actions';
+import { importBackup, updateSettings, changePassword } from '../lib/actions';
 import { Btn, Card, Field, Txt } from './ui';
 
 const THEMES = [
@@ -17,6 +17,9 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
   const [s, setS] = useState<BusinessProfile>(initial);
   const [msg, setMsg] = useState('');
   const [pending, start] = useTransition();
+  const [cur, setCur] = useState('');
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
 
@@ -181,6 +184,38 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
       <Btn onClick={handleSave} disabled={pending} className="w-full">
         {pending ? '…در حال ذخیره' : '💾 ذخیره تنظیمات'}
       </Btn>
+
+      <Card className="space-y-3 p-4">
+        <h3 className="text-sm font-extrabold text-slate-800">🔑 تغییر گذرواژه</h3>
+        <Field label="گذرواژه فعلی">
+          <Txt type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
+        </Field>
+        <div className="grid grid-cols-2 gap-2.5">
+          <Field label="گذرواژه جدید (حداقل ۸ حرف)">
+            <Txt type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
+          </Field>
+          <Field label="تکرار گذرواژه جدید">
+            <Txt type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" />
+          </Field>
+        </div>
+        <Btn
+          variant="outline"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              const res = await changePassword({ current: cur, password: pw, confirm: pw2 });
+              if (res.ok) {
+                setCur('');
+                setPw('');
+                setPw2('');
+              }
+              flash(res.ok ? 'گذرواژه تغییر کرد ✅ (نشست‌های دیگر بسته شد)' : res.errors.join('، '));
+            })
+          }
+        >
+          تغییر گذرواژه
+        </Btn>
+      </Card>
 
       <Card className="space-y-2.5 p-4">
         <h3 className="text-sm font-extrabold text-slate-800">💾 پشتیبان‌گیری</h3>

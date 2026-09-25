@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db } from '../../../lib/db';
+import { getSessionUser } from '../../../lib/auth';
 import { mapInvoice, mapProfile } from '../../../lib/invoices';
 
 /** GET /api/backup → full JSON dump (invoices + settings) as a download. */
 export async function GET() {
+  if (!(await getSessionUser().catch(() => null))) {
+    return NextResponse.json({ error: 'وارد نشده‌ای' }, { status: 401 });
+  }
   const [invoices, profile] = await Promise.all([
     db.invoice.findMany({ orderBy: { createdAt: 'asc' }, include: { items: true } }),
     db.businessProfile.findUnique({ where: { id: 'default' } }),

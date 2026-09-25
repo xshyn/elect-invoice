@@ -60,3 +60,37 @@ export function parseSortParam(raw: string | undefined, fallback: { field: SortF
   }
   return out.length ? out : [fallback];
 }
+
+/* ---------- Auth input contracts ---------- */
+
+export const usernameSchema = z.string().trim().min(2, 'نام کاربری حداقل ۲ حرف باشد').max(40, 'نام کاربری طولانی است');
+
+export const loginSchema = z.object({
+  username: usernameSchema,
+  password: z.string().min(1, 'گذرواژه را وارد کن'),
+  next: z.string().default('/'),
+});
+
+export const setupSchema = z
+  .object({
+    username: usernameSchema,
+    displayName: z.string().trim().max(60).default(''),
+    password: z.string().min(8, 'گذرواژه حداقل ۸ حرف باشد').max(200),
+    confirm: z.string(),
+    next: z.string().default('/'),
+  })
+  .refine((v) => v.password === v.confirm, { message: 'تکرار گذرواژه یکسان نیست', path: ['confirm'] });
+
+export const changePasswordSchema = z
+  .object({
+    current: z.string().min(1, 'گذرواژه فعلی را وارد کن'),
+    password: z.string().min(8, 'گذرواژه جدید حداقل ۸ حرف باشد').max(200),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: 'تکرار گذرواژه یکسان نیست', path: ['confirm'] });
+
+/** Open-redirect guard: only same-origin absolute paths. */
+export function safeNext(raw: string | undefined): string {
+  if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  return '/';
+}
