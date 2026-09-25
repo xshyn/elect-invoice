@@ -12,7 +12,7 @@ const KEY_LEN = 32;
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, KEY_LEN, { N, R, P });
+  const hash = scryptSync(password, salt, KEY_LEN, { N, r: R, p: P, maxmem: 64 * 1024 * 1024 });
   return `scrypt$${N}$${R}$${P}$${salt}$${hash.toString('hex')}`;
 }
 

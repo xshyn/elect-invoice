@@ -163,21 +163,21 @@ export default function EditorForm({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-black text-slate-900">
+        <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">
           {mode === 'edit' ? 'ویرایش فاکتور' : mode === 'clone' ? 'کپی از فاکتور' : 'فاکتور جدید'}
         </h2>
-        <div className="flex rounded-xl bg-slate-200/70 p-1 text-[13px] font-bold" role="tablist" aria-label="حالت نمایش">
-          <button role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={`rounded-lg px-4 py-2 ${!preview ? 'bg-white shadow' : 'text-slate-500'}`}>
+        <div className="flex rounded-xl bg-slate-200/70 dark:bg-white/10 p-1 text-[13px] font-bold" role="tablist" aria-label="حالت نمایش">
+          <button role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={`rounded-lg px-4 py-2 ${!preview ? 'bg-white dark:bg-slate-900 shadow' : 'text-slate-500 dark:text-slate-400'}`}>
             ✎ فرم
           </button>
-          <button role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={`rounded-lg px-4 py-2 ${preview ? 'bg-white shadow' : 'text-slate-500'}`}>
+          <button role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={`rounded-lg px-4 py-2 ${preview ? 'bg-white dark:bg-slate-900 shadow' : 'text-slate-500 dark:text-slate-400'}`}>
             👁 پیش‌نمایش
           </button>
         </div>
       </div>
 
       {errors.length > 0 ? (
-        <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[13px] leading-6 text-rose-700">
+        <div role="alert" className="rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/15 p-4 text-[13px] leading-6 text-rose-700 dark:text-rose-300">
           <p className="font-extrabold">لطفاً این موارد را اصلاح کن:</p>
           <ul className="mt-1 list-disc pr-5">
             {errors.map((e) => (
@@ -217,7 +217,7 @@ export default function EditorForm({
               </Field>
             </div>
             {mode === 'new' ? (
-              <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+              <p className="rounded-xl bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
                 💾 پیش‌نویس در همین مرورگر نگه داشته می‌شود؛ ثبت نهایی در دیتابیس انجام می‌شود.
               </p>
             ) : null}
@@ -225,12 +225,12 @@ export default function EditorForm({
 
           <Card className="p-4">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-extrabold text-slate-800">اقلام ({toFaDigits(items.length)})</h3>
-              <span className="text-xs text-slate-400">جمع: {toFaDigits(subtotal(draftInv).toLocaleString('en-US'))}</span>
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">اقلام ({toFaDigits(items.length)})</h3>
+              <span className="text-xs text-slate-400 dark:text-slate-500">جمع: {toFaDigits(subtotal(draftInv).toLocaleString('en-US'))}</span>
             </div>
             <div className="space-y-2.5">
               {items.map((it, idx) => (
-                <div key={it.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+                <div key={it.id} className="rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-xs font-black text-amber-300">
                       {toFaDigits(idx + 1)}
@@ -239,7 +239,7 @@ export default function EditorForm({
                       <button
                         onClick={() => setItems((p) => p.filter((x) => x.id !== it.id))}
                         aria-label={`حذف ردیف ${idx + 1}`}
-                        className="rounded-lg px-2.5 py-1 text-xs font-bold text-rose-500 hover:bg-rose-50"
+                        className="rounded-lg px-2.5 py-1 text-xs font-bold text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20"
                       >
                         حذف ✕
                       </button>
@@ -268,7 +268,7 @@ export default function EditorForm({
                       />
                     </Field>
                     <div>
-                      <span className="mb-1.5 block text-[13px] font-bold text-slate-600">قیمت کل</span>
+                      <span className="mb-1.5 block text-[13px] font-bold text-slate-600 dark:text-slate-300">قیمت کل</span>
                       <div className="rounded-xl bg-slate-900 px-2 py-2.5 text-center text-sm font-black text-amber-300">
                         {toFaDigits(lineTotal(it.qty, it.unitPrice).toLocaleString('en-US'))}
                       </div>
@@ -279,14 +279,14 @@ export default function EditorForm({
             </div>
             <button
               onClick={() => setItems((p) => [...p, emptyItem()])}
-              className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300 bg-amber-50 py-3 text-sm font-extrabold text-amber-800 hover:bg-amber-100"
+              className="mt-3 flex w-full items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-400/40 bg-amber-50 dark:bg-amber-400/10 py-3 text-sm font-extrabold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-400/20"
             >
               ＋ افزودن ردیف
             </button>
           </Card>
 
           <Card className="space-y-3 p-4">
-            <label className="flex cursor-pointer items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-bold">
+            <label className="flex cursor-pointer items-center justify-between rounded-xl bg-slate-50 dark:bg-white/5 px-3 py-2.5 text-sm font-bold">
               <span>تخفیف کلی</span>
               <input type="checkbox" checked={discountEnabled} onChange={(e) => setDiscountEnabled(e.target.checked)} className="h-5 w-5 accent-amber-500" />
             </label>
@@ -295,7 +295,7 @@ export default function EditorForm({
                 <Txt value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="numeric" className="num-input" />
               </Field>
             ) : null}
-            <label className="flex cursor-pointer items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-bold">
+            <label className="flex cursor-pointer items-center justify-between rounded-xl bg-slate-50 dark:bg-white/5 px-3 py-2.5 text-sm font-bold">
               <span>مالیات / ارزش افزوده (٪)</span>
               <input type="checkbox" checked={taxEnabled} onChange={(e) => setTaxEnabled(e.target.checked)} className="h-5 w-5 accent-amber-500" />
             </label>
@@ -310,7 +310,7 @@ export default function EditorForm({
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 placeholder="شرایط پرداخت، گارانتی و…"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[15px] outline-none placeholder:text-slate-300 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-[15px] outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 dark:focus:ring-amber-400/20"
               />
             </Field>
             <div className="flex items-center justify-between rounded-2xl bg-slate-900 px-4 py-3 text-amber-300">

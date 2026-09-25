@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   ]);
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-black text-slate-900">تنظیمات کسب‌وکار</h2>
+      <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">تنظیمات کسب‌وکار</h2>
       <SettingsForm initial={profile} invoiceCount={invoiceCount} />
     </div>
   );

@@ -22,10 +22,10 @@ function b64urlEncode(bytes: Uint8Array): string {
   return btoa(s).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
 }
 
-function b64urlDecode(s: string): Uint8Array {
+function b64urlDecode(s: string): Uint8Array<ArrayBuffer> {
   const b64 = s.replaceAll('-', '+').replaceAll('_', '/');
   const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
 }

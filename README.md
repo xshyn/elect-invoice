@@ -21,6 +21,8 @@ client-side PDF/PNG export, and JSON backup/restore.
 - 🔍 Invoice list: debounced full-text search with match highlighting, date-range / amount-range / buyer filters, **multi-level sorting**, pagination (10/25/50) — all executed in SQL
 - 🖨 Clean A4 print stylesheet + client-side **PDF** and **PNG** export (`invoice-{number}-{date}.pdf`)
 - 🏪 Business profile (name, tagline, logo, phones, address, currency, print theme) applied to every invoice
+- 🔐 Username+password login (scrypt), 90-day sliding sessions, first-run setup, logout, password change
+- 🌙 Dark mode (system-aware, toggle, persisted) — the printed invoice paper always stays white
 - 💾 PostgreSQL storage with JSON backup export (`/api/backup`) and restore
 - 📱 Mobile-first: bottom navigation, touch-friendly cards on phones, full data table on desktop
 
@@ -102,6 +104,7 @@ functions); Neon provides the free PostgreSQL. No VPS needed.
 4. **Add Environment Variables** (Production + Preview + Development):
    - `DATABASE_URL` = pooled string
    - `DIRECT_URL` = direct string
+   - `SESSION_SECRET` = random string, min 16 chars (`openssl rand -base64 32`)
 5. **Deploy.** Open the `*.vercel.app` URL, create a test invoice, check the list.
 6. Every future `git push` redeploys automatically (Preview deployments for PRs included).
 
@@ -121,6 +124,14 @@ For managed Postgres (Neon/Supabase/RDS), set `DATABASE_URL` accordingly and run
 ## 🔒 Data & privacy
 
 Self-hosted: all data lives in **your** PostgreSQL. Nothing is sent to third parties. The JSON backup exists for migration between servers.
+
+## 🔐 Authentication
+
+Username + password accounts (scrypt hashing, no seeded credentials by design).
+The first visit to `/login` shows a one-time admin setup form. Sessions last
+90 days and slide forward on activity (any save refreshes the window); changing
+your password in Settings revokes all other sessions. Login attempts are
+rate-limited per instance. Requires `SESSION_SECRET` in production (min 16 chars).
 
 ## 🤝 Contributing
 

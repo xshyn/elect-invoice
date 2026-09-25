@@ -75,17 +75,17 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
   return (
     <div className="space-y-3">
       <div className="no-print flex items-center justify-between gap-2">
-        <button onClick={() => router.back()} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm">
+        <button onClick={() => router.back()} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 shadow-sm">
           → بازگشت
         </button>
         <div className="flex gap-1.5">
-          <Link href={`/edit/${invoice.id}`} className="inline-flex min-h-[44px] items-center rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
+          <Link href={`/edit/${invoice.id}`} className="inline-flex min-h-[44px] items-center rounded-xl bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 shadow-sm">
             ✎ ویرایش
           </Link>
           <button
             onClick={handleClone}
             disabled={cloning}
-            className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-900 disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-100 dark:bg-amber-400/15 px-4 py-2 text-sm font-bold text-amber-900 dark:text-amber-200 disabled:opacity-50"
           >
             {cloning ? '…' : '⧉ کپی'}
           </button>
@@ -94,7 +94,7 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
 
       <InvoicePaper ref={paperRef} invoice={invoice} business={business} />
 
-      <div className="no-print grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm sm:grid-cols-4">
+      <div className="no-print grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 p-3 shadow-sm sm:grid-cols-4">
         <Btn onClick={() => window.print()}>🖨 چاپ</Btn>
         <Btn onClick={handlePDF} variant="soft" disabled={busy !== null}>
           {busy === 'pdf' ? '…در حال ساخت' : '⬇ خروجی PDF'}
@@ -107,17 +107,17 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
         </Btn>
       </div>
 
-      <p className="no-print text-center text-xs leading-5 text-slate-400">
+      <p className="no-print text-center text-xs leading-5 text-slate-400 dark:text-slate-500">
         جمع کل: {toFaDigits(grandTotal(invoice).toLocaleString('en-US'))} {invoice.currency} • نام فایل خروجی: {fileBase}.pdf
       </p>
 
       {confirmDelete ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4" role="dialog" aria-modal="true" aria-label="تأیید حذف">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl">
+          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl">
             <h3 className="font-extrabold">حذف فاکتور {toFaDigits(invoice.number)}؟</h3>
-            <p className="mt-1 text-sm text-slate-500">این کار برگشت‌پذیر نیست.</p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">این کار برگشت‌پذیر نیست.</p>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button onClick={() => setConfirmDelete(false)} className="rounded-xl bg-slate-100 py-3 text-sm font-bold">
+              <button onClick={() => setConfirmDelete(false)} className="rounded-xl bg-slate-100 dark:bg-white/10 py-3 text-sm font-bold">
                 انصراف
               </button>
               <button onClick={() => deleteInvoice(invoice.id)} className="rounded-xl bg-rose-600 py-3 text-sm font-bold text-white">

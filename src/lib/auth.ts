@@ -27,36 +27,36 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  *  limiting on multi-instance deployments. Documented limitation. */
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
-function rateLimitKey(username: string): string {
-  const ip = headers().get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
+async function rateLimitKey(username: string): Promise<string> {
+  const ip = (await headers()).get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
   return `${ip}:${username.toLowerCase()}`;
 }
 
-function checkRateLimit(username: string): boolean {
-  const key = rateLimitKey(username);
+async function checkRateLimit(username: string): Promise<boolean> {
+  const key = await rateLimitKey(username);
   const now = Date.now();
   const cur = attempts.get(key);
   if (cur && cur.resetAt > now && cur.count >= LOGIN_MAX_ATTEMPTS) return false;
   return true;
 }
 
-function recordFailure(username: string): void {
-  const key = rateLimitKey(username);
+async function recordFailure(username: string): Promise<void> {
+  const key = await rateLimitKey(username);
   const now = Date.now();
   const cur = attempts.get(key);
   if (!cur || cur.resetAt <= now) attempts.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
   else cur.count += 1;
 }
 
-function clearAttempts(username: string): void {
-  attempts.delete(rateLimitKey(username));
+async function clearAttempts(username: string): Promise<void> {
+  attempts.delete(await rateLimitKey(username));
 }
 
 /* ---------- Session helpers ---------- */
 
 async function issueCookie(sid: string, uid: string, expiresAt: Date): Promise<void> {
   const token = await signSession(getSessionSecret(), { sid, uid, exp: expiresAt.getTime() });
-  cookies().set(COOKIE_NAME, token, {
+  (await cookies()).set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -69,7 +69,7 @@ async function issueCookie(sid: string, uid: string, expiresAt: Date): Promise<v
  *  (cookies can't be written during component render).
  */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
   let payload;
   try {
@@ -104,7 +104,7 @@ export async function requireUserId(): Promise<string | null> {
  *  Extends the window when less than REFRESH_THRESHOLD_DAYS remain.
  */
 export async function touchSession(): Promise<void> {
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return;
   const payload = await verifySession(getSessionSecret(), token).catch(() => null);
   if (!payload) return;
@@ -142,7 +142,7 @@ export async function setupOrLogin(raw: unknown, isSetup: boolean): Promise<Auth
       const user = await db.user.create({
         data: { username: input.username, displayName: input.displayName, passwordHash: hashPassword(input.password) },
       });
-      await createSession(user.id, headers().get('user-agent') ?? '');
+      await createSession(user.id, (await headers()).get('user-agent') ?? '');
     } catch {
       return { ok: false, errors: ['این نام کاربری قبلاً گرفته شده.'] };
     }
@@ -150,27 +150,27 @@ export async function setupOrLogin(raw: unknown, isSetup: boolean): Promise<Auth
   }
 
   const input = parsed.data as { username: string; password: string; next: string };
-  if (!checkRateLimit(input.username)) {
+  if (!(await checkRateLimit(input.username))) {
     return { ok: false, errors: ['تلاش‌های ناموفق زیاد بود؛ چند دقیقه دیگر دوباره امتحان کن.'] };
   }
   const user = await db.user.findUnique({ where: { username: input.username } });
   // Generic message either way: don't reveal whether the username exists.
   if (!user || !verifyPassword(input.password, user.passwordHash)) {
-    recordFailure(input.username);
+    await recordFailure(input.username);
     return { ok: false, errors: ['نام کاربری یا گذرواژه درست نیست.'] };
   }
-  clearAttempts(input.username);
-  await createSession(user.id, headers().get('user-agent') ?? '');
+  await clearAttempts(input.username);
+  await createSession(user.id, (await headers()).get('user-agent') ?? '');
   redirect(safeNext(input.next));
 }
 
 export async function logout(): Promise<void> {
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (token) {
     const payload = await verifySession(getSessionSecret(), token).catch(() => null);
     if (payload) await db.session.deleteMany({ where: { id: payload.sid } });
   }
-  cookies().delete(COOKIE_NAME);
+  (await cookies()).delete(COOKIE_NAME);
   redirect('/login');
 }
 
@@ -184,7 +184,7 @@ export async function changePassword(raw: unknown): Promise<AuthResult> {
   if (!row || !verifyPassword(parsed.data.current, row.passwordHash)) {
     return { ok: false, errors: ['گذرواژه فعلی درست نیست.'] };
   }
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
   const payload = token ? await verifySession(getSessionSecret(), token).catch(() => null) : null;
   await db.$transaction(async (tx) => {
     await tx.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(parsed.data.password) } });

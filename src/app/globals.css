@@ -4,6 +4,9 @@
 @import "@fontsource/vazirmatn/700.css";
 @import "@fontsource/vazirmatn/800.css";
 
+/* حالت تیره با کلاس دستی (نه فقط ترجیح سیستمی) تا انتخاب کاربر بماند */
+@custom-variant dark (&:where(.theme-dark, .theme-dark *));
+
 @theme {
   --font-sans: "Vazirmatn", "IRANSans", "Tahoma", system-ui, sans-serif;
   --color-volt-50: #fffbeb;
@@ -19,12 +22,23 @@
 html {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+  color-scheme: light;
+}
+
+/* تیره: سرمه‌ای عمیق (نه مشکی خالص)، متن کمی شکسته‌سفید برای کاهش خیرگی */
+html.theme-dark {
+  color-scheme: dark;
 }
 
 body {
   background: #f1f5f9;
   color: #0f172a;
   font-family: var(--font-sans);
+}
+
+.theme-dark body {
+  background: #0b1220;
+  color: #e2e8f0;
 }
 
 /* ورودی‌های عددی: فونت کمی درشت‌تر و چپ‌چین داخل کادر برای خوانایی ارقام */
@@ -38,6 +52,11 @@ mark.hl {
   color: inherit;
   border-radius: 0.25rem;
   padding: 0 0.15rem;
+}
+
+.theme-dark mark.hl {
+  background: #92600a;
+  color: #fef3c7;
 }
 
 /* ---------- کاغذ فاکتور (نمای چاپی) ---------- */

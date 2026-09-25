@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { safeNext } from '../../lib/validators';
-import { setupOrLogin } from '../../lib/auth';
-import { Btn, Card, Field, Txt } from '../../components/ui';
+import { safeNext } from '../lib/validators';
+import { setupOrLogin } from '../lib/auth';
+import { Btn, Card, Field, Txt } from './ui';
 
 export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: string }) {
   const [pending, start] = useTransition();
@@ -31,8 +31,8 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
         <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-3xl bg-slate-900 text-3xl shadow-xl">
           ⚡
         </div>
-        <h2 className="text-xl font-black text-slate-900">{isSetup ? 'ساخت حساب کاربری' : 'ورود به جریان فاکتور'}</h2>
-        <p className="mt-1 text-[13px] leading-5 text-slate-500">
+        <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">{isSetup ? 'ساخت حساب کاربری' : 'ورود به جریان فاکتور'}</h2>
+        <p className="mt-1 text-[13px] leading-5 text-slate-500 dark:text-slate-400">
           {isSetup
             ? 'این اولین اجراست؛ یک حساب مدیر بساز. بعداً با همین نام و گذرواژه وارد می‌شوی.'
             : 'نام کاربری و گذرواژه‌ات را وارد کن.'}
@@ -41,7 +41,7 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
 
       <Card className="space-y-3 p-5">
         {errors.length > 0 ? (
-          <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[13px] leading-6 text-rose-700">
+          <div role="alert" className="rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/15 p-3 text-[13px] leading-6 text-rose-700 dark:text-rose-300">
             <ul className="list-disc pr-5">
               {errors.map((e) => (
                 <li key={e}>{e}</li>
@@ -88,7 +88,7 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
         </Btn>
       </Card>
 
-      <p className="mt-4 text-center text-xs leading-5 text-slate-400">
+      <p className="mt-4 text-center text-xs leading-5 text-slate-400 dark:text-slate-500">
         🔒 نشست تا ۹۰ روز باز می‌ماند و با هر فعالیت تمدید می‌شود.
         <br />
         داده‌ها فقط روی سرور خودت است.

@@ -21,7 +21,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     getSessionUser().catch((): SessionUser | null => null),
   ]);
   return (
-    <html lang="fa" dir="rtl">
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
+      <head>
+        {/* تم ذخیره‌شده (یا ترجیح سیستمی) قبل از اولین رندر تا صفحه چشمک نزند */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('jaryan-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('theme-dark')}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>
         <Shell businessName={profile?.name ?? 'جریان'} tagline={profile?.tagline ?? ''} user={user}>
           {children}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTransition, type ReactNode } from 'react';
 import { logout } from '../lib/auth';
+import ThemeToggle from './ThemeToggle';
 import type { SessionUser } from '../lib/auth';
 
 const TABS = [
@@ -43,7 +44,7 @@ export default function Shell({
 
   return (
     <div className="app-shell mx-auto min-h-dvh w-full max-w-5xl px-3 pb-28 pt-3 sm:px-6 md:pb-10">
-      <header className="no-print mb-4 overflow-hidden rounded-3xl bg-slate-900 text-white shadow-xl shadow-slate-900/20">
+      <header className="no-print mb-4 overflow-hidden rounded-3xl bg-slate-900 text-white shadow-xl shadow-slate-900/20 dark:bg-slate-950 dark:ring-1 dark:ring-white/10 dark:shadow-none">
         <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
           <Link
             href="/"
@@ -71,9 +72,10 @@ export default function Shell({
               ⎋
             </button>
           ) : null}
+          <ThemeToggle />
           <Link
             href="/new"
-            className="hidden shrink-0 items-center gap-1 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-900 hover:bg-amber-300 sm:inline-flex"
+            className="hidden shrink-0 items-center gap-1 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-slate-900 dark:text-slate-100 hover:bg-amber-300 sm:inline-flex"
           >
             ＋ فاکتور جدید
           </Link>
@@ -98,7 +100,7 @@ export default function Shell({
 
       <nav
         aria-label="ناوبری موبایل"
-        className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 dark:border-white/10 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-white/10 dark:bg-slate-950/95 md:hidden"
       >
         <div className="mx-auto grid max-w-5xl grid-cols-4">
           {TABS.map((t) => (
@@ -107,7 +109,7 @@ export default function Shell({
               href={t.href}
               aria-current={isActive(path, t.href) ? 'page' : undefined}
               className={`flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold transition ${
-                isActive(path, t.href) ? 'text-amber-600' : 'text-slate-400'
+                isActive(path, t.href) ? 'text-amber-600 dark:text-amber-300' : 'text-slate-400 dark:text-slate-500'
               }`}
             >
               <span className="text-xl leading-6">{t.icon}</span>

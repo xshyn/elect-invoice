@@ -28,7 +28,7 @@ export default async function HomePage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/new"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-extrabold text-slate-900 hover:bg-amber-300"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-extrabold text-slate-900 dark:text-slate-100 hover:bg-amber-300"
           >
             ＋ صدور فاکتور جدید
           </Link>
@@ -44,25 +44,25 @@ export default async function HomePage() {
       <section className="grid grid-cols-3 gap-2.5 sm:gap-4" aria-label="آمار کلی">
         <Card className="p-3 text-center sm:p-5">
           <div className="text-2xl">🧾</div>
-          <div className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">{toFaDigits(stats.count)}</div>
-          <div className="text-[11px] font-bold text-slate-500 sm:text-xs">تعداد فاکتورها</div>
+          <div className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 sm:text-2xl">{toFaDigits(stats.count)}</div>
+          <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-xs">تعداد فاکتورها</div>
         </Card>
         <Card className="p-3 text-center sm:p-5">
           <div className="text-2xl">💰</div>
-          <div className="mt-1 text-sm font-black text-slate-900 sm:text-xl">{formatFaMoney(stats.total)}</div>
-          <div className="text-[11px] font-bold text-slate-500 sm:text-xs">جمع کل ({profile.currency})</div>
+          <div className="mt-1 text-sm font-black text-slate-900 dark:text-slate-100 sm:text-xl">{formatFaMoney(stats.total)}</div>
+          <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-xs">جمع کل ({profile.currency})</div>
         </Card>
         <Card className="p-3 text-center sm:p-5">
           <div className="text-2xl">🔢</div>
-          <div className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">{toFaDigits(stats.nextNumber)}</div>
-          <div className="text-[11px] font-bold text-slate-500 sm:text-xs">شماره بعدی</div>
+          <div className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 sm:text-2xl">{toFaDigits(stats.nextNumber)}</div>
+          <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 sm:text-xs">شماره بعدی</div>
         </Card>
       </section>
 
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-base font-extrabold text-slate-800">آخرین فاکتورها</h3>
-          <Link href="/invoices" className="text-[13px] font-bold text-amber-700">
+          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">آخرین فاکتورها</h3>
+          <Link href="/invoices" className="text-[13px] font-bold text-amber-700 dark:text-amber-300">
             مشاهده همه ←
           </Link>
         </div>
@@ -84,14 +84,14 @@ export default async function HomePage() {
             {recent.map((inv) => (
               <Link key={inv.id} href={`/invoices/${inv.id}`}>
                 <Card className="flex items-center gap-3 p-3.5 transition hover:border-amber-300 hover:shadow-md">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-xl">🧾</span>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 dark:bg-amber-400/15 text-xl">🧾</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-extrabold text-slate-800">
+                    <span className="block truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">
                       فاکتور {toFaDigits(inv.number)} • {inv.buyerName || 'بدون نام خریدار'}
                     </span>
-                    <span className="block text-xs text-slate-400">{longFaDate(inv.date)}</span>
+                    <span className="block text-xs text-slate-400 dark:text-slate-500">{longFaDate(inv.date)}</span>
                   </span>
-                  <span className="shrink-0 text-sm font-black text-slate-900">{formatFaMoney(grandTotal(inv))}</span>
+                  <span className="shrink-0 text-sm font-black text-slate-900 dark:text-slate-100">{formatFaMoney(grandTotal(inv))}</span>
                 </Card>
               </Link>
             ))}

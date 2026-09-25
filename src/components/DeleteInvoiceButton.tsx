@@ -15,8 +15,8 @@ export default function DeleteInvoiceButton({ id, number, compact }: { id: strin
         onClick={() => setConfirm(true)}
         className={
           compact
-            ? 'flex-1 rounded-lg bg-rose-50 py-2 text-xs font-bold text-rose-600'
-            : 'rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50'
+            ? 'flex-1 rounded-lg bg-rose-50 dark:bg-rose-500/15 py-2 text-xs font-bold text-rose-600 dark:text-rose-400'
+            : 'rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20'
         }
       >
         🗑 حذف
@@ -33,7 +33,7 @@ export default function DeleteInvoiceButton({ id, number, compact }: { id: strin
       >
         {pending ? '…' : `حذف ${number}؟`}
       </button>
-      <button onClick={() => setConfirm(false)} className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs font-bold">
+      <button onClick={() => setConfirm(false)} className="rounded-lg bg-slate-100 dark:bg-white/10 px-2 py-1.5 text-xs font-bold">
         نه
       </button>
     </span>
