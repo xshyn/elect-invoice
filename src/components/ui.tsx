@@ -115,6 +115,35 @@ export function IconBtn({
   );
 }
 
+/** Link styled exactly like IconBtn — for icon-only navigation (view/edit). */
+export function IconLink({
+  href,
+  label,
+  tone = 'ghost',
+  size = 'md',
+  className = '',
+  children,
+  ...rest
+}: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
+  href: string;
+  label: string;
+  tone?: IconBtnTone;
+  size?: IconBtnSize;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      onClick={(e) => e.stopPropagation()}
+      className={`grid shrink-0 cursor-pointer select-none place-items-center transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950 ${ICON_SIZES[size]} ${ICON_TONES[tone]} ${className}`}
+      {...rest}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function Field({
   label,
   hint,

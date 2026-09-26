@@ -6,6 +6,7 @@ import { Prisma } from '../generated/prisma/client';
 import { db } from './db';
 import { computeTotals } from './invoices';
 import { invoiceInputSchema, settingsSchema, draftSchema, type DraftPayload, type InvoiceInput, type SettingsInput } from './validators';
+import type { Invoice } from '../types';
 import { jalaliStringToISO, parseJalali, todayJalaliString } from '../utils/jalali';
 import { requireUserId, touchSession } from './auth';
 
@@ -148,6 +149,49 @@ export async function deleteInvoice(id: string): Promise<void> {
   revalidatePath('/');
   revalidatePath('/invoices');
   redirect('/invoices');
+}
+
+const uuidSchema = z.string().uuid();
+
+/** Bulk delete for the invoices list (selection UI). No redirect — the
+ *  caller updates its local state; paths are revalidated for consistency. */
+export async function deleteInvoices(rawIds: unknown): Promise<{ ok: true; count: number } | { ok: false; errors: string[] }> {
+  if (!(await requireUserId())) return { ok: false, errors: ['وارد نشده‌ای؛ دوباره وارد شو.'] };
+  const parsed = z.array(uuidSchema).min(1).max(100).safeParse(rawIds);
+  if (!parsed.success) return { ok: false, errors: ['انتخاب معتبر نیست.'] };
+  const res = await db.invoice.deleteMany({ where: { id: { in: parsed.data } } });
+  revalidatePath('/');
+  revalidatePath('/invoices');
+  await touchSession();
+  return { ok: true, count: res.count };
+}
+
+const pageFilterSchema = z.object({
+  q: z.string().max(200).default(''),
+  from: z.string().max(20).default(''),
+  to: z.string().max(20).default(''),
+  min: z.number().nullable().default(null),
+  max: z.number().nullable().default(null),
+  buyerOnly: z.boolean().default(false),
+  sort: z
+    .array(z.object({ field: z.enum(['date', 'number', 'total', 'buyerName', 'createdAt', 'updatedAt', 'itemCount']), dir: z.enum(['asc', 'desc']) }))
+    .max(7)
+    .default([{ field: 'date', dir: 'desc' }] as const),
+  page: z.number().int().min(1).max(10000).default(1),
+  pageSize: z.number().int().default(10),
+});
+
+/** Next page of the invoices list for infinite scroll. Returns plain
+ *  serializable rows (same mapper as the server page). */
+export async function fetchInvoicesPage(raw: unknown): Promise<
+  { ok: true; items: Invoice[]; totalCount: number } | { ok: false; errors: string[] }
+> {
+  if (!(await requireUserId())) return { ok: false, errors: ['وارد نشده‌ای؛ دوباره وارد شو.'] };
+  const parsed = pageFilterSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, errors: ['پارامتر صفحه معتبر نیست.'] };
+  const { listInvoices } = await import('./invoices');
+  const { items, totalCount } = await listInvoices({ ...parsed.data, pageSize: parsed.data.pageSize });
+  return { ok: true, items, totalCount };
 }
 
 export async function updateSettings(raw: unknown): Promise<ActionResult> {
