@@ -189,16 +189,23 @@ export default function EditorForm({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">
-          {mode === 'edit' ? 'ویرایش فاکتور' : mode === 'clone' ? 'کپی از فاکتور' : 'فاکتور جدید'}
-        </h2>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-slate-100">
+            {mode === 'edit' ? 'ویرایش فاکتور' : mode === 'clone' ? 'کپی از فاکتور' : 'فاکتور جدید'}
+          </h1>
+          <p className="mt-0.5 text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+            {mode === 'edit'
+              ? 'تغییرات را ثبت کن؛ شماره و تاریخ قابل ویرایش است.'
+              : 'اقلام را وارد کن، پیش‌نمایش بگیر و ذخیره کن.'}
+          </p>
+        </div>
         <div className="flex rounded-xl bg-slate-200/70 dark:bg-white/10 p-1 text-[13px] font-bold" role="tablist" aria-label="حالت نمایش">
-          <button role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={`rounded-lg px-4 py-2 ${!preview ? 'bg-white dark:bg-slate-900 shadow' : 'text-slate-500 dark:text-slate-400'}`}>
+          <button type="button" role="tab" aria-selected={!preview} onClick={() => setPreview(false)} className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-4 py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${!preview ? 'bg-white text-slate-900 shadow dark:bg-slate-900 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
             <Pencil size={14} /> فرم
           </button>
-          <button role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={`rounded-lg px-4 py-2 ${preview ? 'bg-white dark:bg-slate-900 shadow' : 'text-slate-500 dark:text-slate-400'}`}>
+          <button type="button" role="tab" aria-selected={preview} onClick={() => setPreview(true)} className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-4 py-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${preview ? 'bg-white text-slate-900 shadow dark:bg-slate-900 dark:text-slate-100' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}>
             <Eye size={14} /> پیش‌نمایش
           </button>
         </div>
@@ -216,10 +223,10 @@ export default function EditorForm({
       ) : null}
 
       {preview ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <InvoicePaper invoice={draftInv} business={profile} />
           <div className="no-print flex gap-2">
-            <Btn onClick={() => setPreview(false)} variant="outline" className="flex-1">
+            <Btn onClick={() => setPreview(false)} variant="outline" size="md" className="flex-1">
               بازگشت به فرم
             </Btn>
             <ExportButton
@@ -229,13 +236,13 @@ export default function EditorForm({
               label="خروجی"
               className="flex-1"
             />
-            <Btn onClick={handleSave} disabled={pending} className="flex-1">
-              {pending ? '…در حال ذخیره' : <><Save size={17} strokeWidth={2.5} /> ذخیره فاکتور</>}
+            <Btn onClick={handleSave} loading={pending} size="md" className="flex-1">
+              {!pending && <Save size={17} strokeWidth={2.5} />} ذخیره فاکتور
             </Btn>
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Card className="space-y-3 p-4">
             <div className="grid grid-cols-2 gap-2.5">
               <Field label="شماره فاکتور">
@@ -259,9 +266,9 @@ export default function EditorForm({
                   ؛ با هر دستگاهی ادامه بده.
                 </span>
                 {draftState === 'saved' ? (
-                  <button onClick={discardDraftNow} className="shrink-0 font-bold underline underline-offset-4">
+                  <Btn variant="ghost" size="xs" onClick={discardDraftNow} loading={pending} className="shrink-0 !px-2 !text-amber-800 underline underline-offset-4 dark:!text-amber-200">
                     دور بریز
-                  </button>
+                  </Btn>
                 ) : null}
               </div>
             ) : null}
@@ -273,32 +280,36 @@ export default function EditorForm({
               <span className="text-xs text-slate-400 dark:text-slate-500">جمع: {toFaDigits(subtotal(draftInv).toLocaleString('en-US'))}</span>
             </div>
             {items.length === 0 ? (
-              <button
+              <Btn
+                variant="soft"
+                size="lg"
+                fullWidth
                 onClick={() => setItems([emptyItem()])}
-                className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/60 px-4 py-8 text-amber-800 transition hover:bg-amber-100 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200 dark:hover:bg-amber-400/20"
+                className="!flex-col !gap-2 !border-2 !border-dashed !border-amber-300 !bg-amber-50/60 !py-8 hover:!bg-amber-100 dark:!border-amber-400/40 dark:!bg-amber-400/10 dark:hover:!bg-amber-400/20"
               >
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-amber-400 text-slate-900 shadow-lg shadow-amber-500/30">
                   <Plus size={24} strokeWidth={2.5} />
                 </span>
                 <span className="text-sm font-extrabold">افزودن اولین قلم</span>
-                <span className="text-xs opacity-70">شرح، تعداد، واحد و قیمت را وارد کن</span>
-              </button>
+                <span className="text-xs font-bold opacity-70">شرح، تعداد، واحد و قیمت را وارد کن</span>
+              </Btn>
             ) : null}
             <div className="space-y-2.5">
               {items.map((it, idx) => (
                 <div key={it.id} className="rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/5 p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-xs font-black text-amber-300">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-xs font-black text-amber-300 dark:bg-amber-400 dark:text-slate-950">
                       {toFaDigits(idx + 1)}
                     </span>
-                    <button
+                    <Btn
+                      variant="dangerSoft"
+                      size="xs"
                       onClick={() => setItems((p) => p.filter((x) => x.id !== it.id))}
                       aria-label={`حذف ردیف ${idx + 1}`}
-                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={14} strokeWidth={2.5} />
                       حذف
-                    </button>
+                    </Btn>
                   </div>
                   <Field label="شرح کالا یا خدمات">
                     <Txt value={it.desc} onChange={(e) => updateItem(it.id, { desc: e.target.value })} placeholder="مثلاً سیم‌ افشان ۲/۵ متری…" />
@@ -339,13 +350,16 @@ export default function EditorForm({
                 </div>
               ))}
             </div>
-            <button
+            <Btn
+              variant="soft"
+              size="md"
+              fullWidth
               onClick={() => setItems((p) => [...p, emptyItem()])}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-400/40 bg-amber-50 dark:bg-amber-400/10 py-3 text-sm font-extrabold text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-400/20"
+              className="mt-3 !border-2 !border-dashed !border-amber-300 !bg-amber-50 hover:!bg-amber-100 dark:!border-amber-400/40 dark:!bg-amber-400/10 dark:hover:!bg-amber-400/20"
             >
               <Plus size={17} strokeWidth={2.5} />
               افزودن ردیف
-            </button>
+            </Btn>
             <datalist id="jaryan-units">
               {profile.units.map((u) => (
                 <option key={u} value={u} />
@@ -387,8 +401,8 @@ export default function EditorForm({
             </div>
           </Card>
 
-          <div className="no-print sticky bottom-20 flex gap-2 md:static">
-            <Btn onClick={() => router.back()} variant="outline" className="flex-1" disabled={pending}>
+          <div className="no-print sticky bottom-24 z-30 flex gap-2 rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90 dark:shadow-black/30 lg:static lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none dark:lg:bg-transparent">
+            <Btn onClick={() => router.back()} variant="outline" size="md" className="flex-1" disabled={pending}>
               انصراف
             </Btn>
             <ExportButton
@@ -398,8 +412,8 @@ export default function EditorForm({
               label="خروجی"
               className="flex-1"
             />
-            <Btn onClick={handleSave} disabled={pending} className="flex-[2]">
-              {pending ? '…در حال ذخیره' : <><Save size={17} strokeWidth={2.5} /> ذخیره فاکتور</>}
+            <Btn onClick={handleSave} loading={pending} size="md" className="flex-[2]">
+              {!pending && <Save size={17} strokeWidth={2.5} />} ذخیره فاکتور
             </Btn>
           </div>
 

@@ -4,7 +4,7 @@ import { parseSortParam } from '../../lib/validators';
 import { grandTotal } from '../../utils/calc';
 import { formatFaMoney, splitHighlight, toEnDigits, toFaDigits } from '../../utils/persian';
 import { longFaDate } from '../../utils/jalali';
-import { Btn, Card, Empty } from '../../components/ui';
+import { BtnLink, Card, Empty, PageHeader, btnClasses } from '../../components/ui';
 import InvoicesToolbar from '../../components/InvoicesToolbar';
 import DeleteInvoiceButton from '../../components/DeleteInvoiceButton';
 import { requireUser } from '../../lib/auth';
@@ -53,6 +53,56 @@ function Hl({ text, query }: { text: string; query: string }) {
   );
 }
 
+function PageLink({
+  href,
+  label,
+  disabled,
+  children,
+  primary = false,
+}: {
+  href: string;
+  label: string;
+  disabled: boolean;
+  children: React.ReactNode;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : undefined}
+      className={`${btnClasses({ variant: primary ? 'primary' : 'subtle', size: 'sm' })} !px-4 ${disabled ? 'pointer-events-none opacity-40' : ''}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function PageIconLink({
+  href,
+  label,
+  disabled,
+  children,
+}: {
+  href: string;
+  label: string;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : undefined}
+      className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600 transition-all duration-150 hover:bg-slate-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15 ${disabled ? 'pointer-events-none opacity-40' : ''}`}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<SP> }) {
   await requireUser('/invoices');
   const sp = await searchParams;
@@ -82,14 +132,17 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   const safePage = Math.min(page, totalPages);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">فاکتورها ({toFaDigits(totalCount)})</h2>
-        <Link href="/new" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-extrabold text-amber-300 dark:bg-amber-400 dark:text-slate-900">
-          <Plus size={16} strokeWidth={2.5} />
-          جدید
-        </Link>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title={`فاکتورها (${toFaDigits(totalCount)})`}
+        desc="جست‌وجو، مرتب‌سازی چندسطحی و فیلتر — برای مدیریت سریع."
+        actions={
+          <BtnLink href="/new" variant="primary" size="sm">
+            <Plus size={16} strokeWidth={2.5} />
+            جدید
+          </BtnLink>
+        }
+      />
 
       <InvoicesToolbar activeFilterCount={activeFilterCount} />
 
@@ -101,9 +154,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
             desc={totalCount === 0 && !q ? 'هنوز فاکتوری ثبت نشده؛ اولین فاکتور را صادر کن.' : 'عبارت یا فیلتر دیگری را امتحان کن، یا فیلترها را پاک کن.'}
             action={
               totalCount === 0 && !q ? (
-                <Link href="/new">
-                  <Btn><Plus size={17} strokeWidth={2.5} /> صدور فاکتور</Btn>
-                </Link>
+                <BtnLink href="/new" variant="primary" size="md"><Plus size={17} strokeWidth={2.5} /> صدور فاکتور</BtnLink>
               ) : undefined
             }
           />
@@ -113,7 +164,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           <div className="space-y-2 md:hidden">
             {items.map((inv) => (
               <Card key={inv.id} className="p-3.5">
-                <Link href={`/invoices/${inv.id}`} className="block">
+                <Link href={`/invoices/${inv.id}`} className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">
                       <Hl text={`فاکتور ${toFaDigits(inv.number)}`} query={q} />
@@ -130,8 +181,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                   </div>
                 </Link>
                 <div className="mt-2.5 flex gap-1.5 border-t border-slate-100 dark:border-white/10 pt-2.5">
-                  <Link href={`/invoices/${inv.id}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 dark:bg-white/10 py-2 text-xs font-bold text-slate-700 dark:text-slate-200"><Eye size={14} /> مشاهده</Link>
-                  <Link href={`/edit/${inv.id}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 dark:bg-white/10 py-2 text-xs font-bold text-slate-700 dark:text-slate-200"><Pencil size={14} /> ویرایش</Link>
+                  <BtnLink href={`/invoices/${inv.id}`} variant="subtle" size="xs" className="flex-1"><Eye size={14} strokeWidth={2.5} /> مشاهده</BtnLink>
+                  <BtnLink href={`/edit/${inv.id}`} variant="subtle" size="xs" className="flex-1"><Pencil size={14} strokeWidth={2.5} /> ویرایش</BtnLink>
                   <DeleteInvoiceButton id={inv.id} number={toFaDigits(inv.number)} compact />
                 </div>
               </Card>
@@ -153,9 +204,9 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                 </thead>
                 <tbody>
                   {items.map((inv) => (
-                    <tr key={inv.id} className="border-b border-slate-50 transition last:border-0 hover:bg-amber-50/50 dark:hover:bg-amber-400/10">
+                    <tr key={inv.id} className="border-b border-slate-50 transition last:border-0 hover:bg-amber-50/50 dark:border-white/5 dark:hover:bg-amber-400/10">
                       <td className="px-4 py-3 font-black">
-                        <Link href={`/invoices/${inv.id}`} className="hover:text-amber-700">
+                        <Link href={`/invoices/${inv.id}`} className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 hover:text-amber-700 dark:hover:text-amber-300">
                           <Hl text={toFaDigits(inv.number)} query={q} />
                         </Link>
                       </td>
@@ -167,8 +218,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                       <td className="whitespace-nowrap px-4 py-3 font-black">{formatFaMoney(grandTotal(inv))}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <Link href={`/invoices/${inv.id}`} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10">مشاهده</Link>
-                          <Link href={`/edit/${inv.id}`} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10">ویرایش</Link>
+                          <BtnLink href={`/invoices/${inv.id}`} variant="ghost" size="xs">مشاهده</BtnLink>
+                          <BtnLink href={`/edit/${inv.id}`} variant="ghost" size="xs">ویرایش</BtnLink>
                           <DeleteInvoiceButton id={inv.id} number={toFaDigits(inv.number)} />
                         </div>
                       </td>
@@ -184,10 +235,10 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
               صفحه {toFaDigits(safePage)} از {toFaDigits(totalPages)} • {toFaDigits(totalCount)} فاکتور
             </span>
             <div className="flex items-center gap-1.5">
-              <Link href={pageUrl(sp, 1)} aria-label="صفحه اول" className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300 ${safePage <= 1 ? 'pointer-events-none opacity-40' : ''}`}><ChevronsRight size={17} /></Link>
-              <Link href={pageUrl(sp, Math.max(1, safePage - 1))} aria-label="صفحه قبلی" className={`h-10 rounded-xl bg-slate-100 dark:bg-white/10 px-4 py-2.5 text-sm font-bold ${safePage <= 1 ? 'pointer-events-none opacity-40' : ''}`}>قبلی</Link>
-              <Link href={pageUrl(sp, Math.min(totalPages, safePage + 1))} aria-label="صفحه بعدی" className={`h-10 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-amber-300 ${safePage >= totalPages ? 'pointer-events-none opacity-40' : ''}`}>بعدی</Link>
-              <Link href={pageUrl(sp, totalPages)} aria-label="صفحه آخر" className={`grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300 ${safePage >= totalPages ? 'pointer-events-none opacity-40' : ''}`}><ChevronsLeft size={17} /></Link>
+              <PageIconLink href={pageUrl(sp, 1)} label="صفحه اول" disabled={safePage <= 1}><ChevronsRight size={17} /></PageIconLink>
+              <PageLink href={pageUrl(sp, Math.max(1, safePage - 1))} label="صفحه قبلی" disabled={safePage <= 1}>قبلی</PageLink>
+              <PageLink href={pageUrl(sp, Math.min(totalPages, safePage + 1))} label="صفحه بعدی" disabled={safePage >= totalPages} primary>بعدی</PageLink>
+              <PageIconLink href={pageUrl(sp, totalPages)} label="صفحه آخر" disabled={safePage >= totalPages}><ChevronsLeft size={17} /></PageIconLink>
             </div>
           </Card>
         </>

@@ -1,9 +1,8 @@
-import Link from 'next/link';
 import { dashboardStats, getProfile, recentInvoices } from '../lib/invoices';
 import { formatFaMoney, toFaDigits } from '../utils/persian';
 import { longFaDate } from '../utils/jalali';
 import { grandTotal } from '../utils/calc';
-import { Btn, Card, Empty } from '../components/ui';
+import { BtnLink, Card, Empty } from '../components/ui';
 import { requireUser } from '../lib/auth';
 import { ArrowLeft, Hash, Plus, ReceiptText, Wallet, Zap } from 'lucide-react';
 
@@ -27,19 +26,13 @@ export default async function HomePage() {
           امروز چه فاکتوری می‌زنیم؟
         </h2>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            href="/new"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-extrabold text-slate-900 dark:text-slate-100 hover:bg-amber-300"
-          >
+          <BtnLink href="/new" variant="accent" size="md">
             <Plus size={17} strokeWidth={2.5} />
             صدور فاکتور جدید
-          </Link>
-          <Link
-            href="/invoices"
-            className="inline-flex min-h-[44px] items-center rounded-xl bg-white/10 px-5 py-2.5 text-sm font-bold text-white hover:bg-white/20"
-          >
+          </BtnLink>
+          <BtnLink href="/invoices" variant="glass" size="md">
             مشاهده فاکتورها
-          </Link>
+          </BtnLink>
         </div>
       </section>
 
@@ -64,39 +57,35 @@ export default async function HomePage() {
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">آخرین فاکتورها</h3>
-          <Link href="/invoices" className="inline-flex items-center gap-1 text-[13px] font-bold text-amber-700 dark:text-amber-300">
+          <BtnLink href="/invoices" variant="ghost" size="xs" className="!px-2 text-amber-700 dark:!text-amber-300">
             مشاهده همه
             <ArrowLeft size={15} />
-          </Link>
+          </BtnLink>
         </div>
         {recent.length === 0 ? (
           <Card>
             <Empty
               icon={<ReceiptText size={30} />}
               title="هنوز فاکتوری نداری"
-              desc="اولین فاکتورت را در کمتر از یک دقیقه صادر کن؛ شماره و تاریخ خودکار پر می‌شود."
+              desc="اولین فاکتور را در کمتر از یک دقیقه صادر کن؛ شماره و تاریخ خودکار پر می‌شود."
               action={
-                <Link href="/new">
-                  <Btn><Plus size={17} strokeWidth={2.5} /> صدور اولین فاکتور</Btn>
-                </Link>
+                <BtnLink href="/new" variant="primary" size="md"><Plus size={17} strokeWidth={2.5} /> صدور اولین فاکتور</BtnLink>
               }
             />
           </Card>
         ) : (
           <div className="space-y-2">
             {recent.map((inv) => (
-              <Link key={inv.id} href={`/invoices/${inv.id}`}>
-                <Card className="flex items-center gap-3 p-3.5 transition hover:border-amber-300 hover:shadow-md">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"><ReceiptText size={21} /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">
-                      فاکتور {toFaDigits(inv.number)} • {inv.buyerName || 'بدون نام خریدار'}
-                    </span>
-                    <span className="block text-xs text-slate-400 dark:text-slate-500">{longFaDate(inv.date)}</span>
+              <Card key={inv.id} className="flex items-center gap-3 p-3.5 transition hover:border-amber-300 hover:shadow-md">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"><ReceiptText size={21} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-extrabold text-slate-800 dark:text-slate-100">
+                    فاکتور {toFaDigits(inv.number)} • {inv.buyerName || 'بدون نام خریدار'}
                   </span>
-                  <span className="shrink-0 text-sm font-black text-slate-900 dark:text-slate-100">{formatFaMoney(grandTotal(inv))}</span>
-                </Card>
-              </Link>
+                  <span className="block text-xs text-slate-400 dark:text-slate-500">{longFaDate(inv.date)}</span>
+                </span>
+                <span className="shrink-0 text-sm font-black text-slate-900 dark:text-slate-100">{formatFaMoney(grandTotal(inv))}</span>
+              </Card>
             ))}
           </div>
         )}

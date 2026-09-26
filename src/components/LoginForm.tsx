@@ -82,8 +82,8 @@ export default function LoginForm({ isSetup, next }: { isSetup: boolean; next: s
           </Field>
         ) : null}
 
-        <Btn onClick={submit} disabled={pending} className="w-full">
-          {pending ? '…' : isSetup ? 'ساخت حساب و ورود' : 'ورود'}
+        <Btn onClick={submit} loading={pending} size="lg" fullWidth>
+          {isSetup ? 'ساخت حساب و ورود' : 'ورود'}
         </Btn>
       </Card>
 

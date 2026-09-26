@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteInvoice } from '../lib/actions';
 import { Trash2 } from 'lucide-react';
+import { Btn } from './ui';
 
 export default function DeleteInvoiceButton({ id, number, compact }: { id: string; number: string; compact?: boolean }) {
   const [confirm, setConfirm] = useState(false);
@@ -12,31 +13,34 @@ export default function DeleteInvoiceButton({ id, number, compact }: { id: strin
 
   if (!confirm) {
     return (
-      <button
+      <Btn
+        variant="dangerSoft"
+        size="xs"
         onClick={() => setConfirm(true)}
-        className={
-          compact
-            ? 'flex-1 rounded-lg bg-rose-50 dark:bg-rose-500/15 py-2 text-xs font-bold text-rose-600 dark:text-rose-400'
-            : 'rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20'
-        }
+        className={compact ? 'flex-1' : ''}
+        aria-label={`حذف فاکتور ${number}`}
       >
-        <span className="inline-flex items-center gap-1"><Trash2 size={14} /> حذف</span>
-      </button>
+        <Trash2 size={14} strokeWidth={2.5} />
+        حذف
+      </Btn>
     );
   }
 
   return (
-    <span className={compact ? 'flex flex-1 gap-1' : 'inline-flex gap-1'}>
-      <button
-        disabled={pending}
+    <span className={compact ? 'flex flex-1 gap-1.5' : 'inline-flex gap-1.5'}>
+      <Btn
+        variant="danger"
+        size="xs"
+        loading={pending}
         onClick={() => start(async () => { await deleteInvoice(id); router.refresh(); })}
-        className="flex-1 rounded-lg bg-rose-600 px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+        className="flex-1"
       >
-        {pending ? '…' : `حذف ${number}؟`}
-      </button>
-      <button onClick={() => setConfirm(false)} className="rounded-lg bg-slate-100 dark:bg-white/10 px-2 py-1.5 text-xs font-bold">
+        {!pending && <Trash2 size={14} strokeWidth={2.5} />}
+        {pending ? 'در حال حذف…' : `حذف ${number}؟`}
+      </Btn>
+      <Btn variant="subtle" size="xs" onClick={() => setConfirm(false)} disabled={pending}>
         نه
-      </button>
+      </Btn>
     </span>
   );
 }

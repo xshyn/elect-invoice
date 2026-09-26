@@ -62,7 +62,7 @@ export default function ExportButton({
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="انتخاب قالب خروجی"
@@ -80,28 +80,37 @@ export default function ExportButton({
               </p>
             ) : null}
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
+              <Btn
+                variant="primary"
+                size="md"
+                loading={busy === 'pdf'}
+                disabled={busy !== null}
                 onClick={() => choose('pdf')}
-                disabled={busy !== null}
-                className="rounded-2xl border-2 border-slate-900 bg-slate-900 py-3.5 text-sm font-extrabold text-amber-300 disabled:opacity-50 dark:border-amber-400 dark:bg-amber-400 dark:text-slate-900"
               >
-                {busy === 'pdf' ? '…' : <><FileText size={17} /> PDF</>}
-              </button>
-              <button
+                {!busy && <FileText size={17} strokeWidth={2.5} />}
+                PDF
+              </Btn>
+              <Btn
+                variant="outline"
+                size="md"
+                loading={busy === 'png'}
+                disabled={busy !== null}
                 onClick={() => choose('png')}
-                disabled={busy !== null}
-                className="rounded-2xl border-2 border-slate-200 bg-white py-3.5 text-sm font-extrabold text-slate-700 disabled:opacity-50 dark:border-white/15 dark:bg-transparent dark:text-slate-200"
               >
-                {busy === 'png' ? '…' : <><ImageIcon size={17} /> PNG</>}
-              </button>
+                {!busy && <ImageIcon size={17} strokeWidth={2.5} />}
+                PNG
+              </Btn>
             </div>
-            <button
+            <Btn
+              variant="ghost"
+              size="sm"
+              fullWidth
               onClick={() => setOpenState(false)}
               disabled={busy !== null}
-              className="mt-2 w-full rounded-xl py-2.5 text-[13px] font-bold text-slate-400 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-500 dark:hover:bg-white/5"
+              className="mt-2"
             >
               انصراف
-            </button>
+            </Btn>
           </div>
         </div>
       ) : null}

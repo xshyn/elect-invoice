@@ -6,31 +6,38 @@ import { useEffect, useState, useTransition, type ReactNode } from 'react';
 import {
   House,
   LogOut,
-  Menu,
   Moon,
   Plus,
   ReceiptText,
   Settings as SettingsIcon,
   Sun,
-  X,
   Zap,
 } from 'lucide-react';
 import { logout } from '../lib/auth';
 import type { SessionUser } from '../lib/auth';
+import { BtnLink, IconBtn } from './ui';
 
 const TABS = [
   { href: '/', label: 'خانه', desc: 'نمای کلی و دسترسی سریع', icon: House },
   { href: '/invoices', label: 'فاکتورها', desc: 'جست‌وجو، فیلتر و مدیریت', icon: ReceiptText },
   { href: '/new', label: 'فاکتور جدید', desc: 'صدور در کمتر از یک دقیقه', icon: Plus },
   { href: '/settings', label: 'تنظیمات', desc: 'کسب‌وکار، واحدها و پشتیبان', icon: SettingsIcon },
-];
+] as const;
 
 function isActive(path: string, href: string): boolean {
   if (href === '/') return path === '/';
+  if (href === '/invoices') {
+    return (
+      path === '/invoices' ||
+      path.startsWith('/invoices/') ||
+      path.startsWith('/edit/') ||
+      path.startsWith('/clone/')
+    );
+  }
   return path === href || path.startsWith(href + '/');
 }
 
-function ThemeToggle() {
+function ThemeToggle({ tone = 'subtle' }: { tone?: 'subtle' | 'ghost' }) {
   const [dark, setDark] = useState(false);
   useEffect(() => {
     setDark(document.documentElement.classList.contains('theme-dark'));
@@ -46,14 +53,36 @@ function ThemeToggle() {
     }
   };
   return (
-    <button
+    <IconBtn
+      label={dark ? 'حالت روشن' : 'حالت تیره'}
+      tone={tone}
+      size="md"
       onClick={toggle}
-      aria-label={dark ? 'روشنایی: حالت روشن' : 'روشنایی: حالت تیره'}
-      title={dark ? 'حالت روشن' : 'حالت تیره'}
-      className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 text-amber-300 transition-all duration-150 hover:bg-white/20 active:scale-95"
     >
-      {dark ? <Sun size={20} /> : <Moon size={20} />}
-    </button>
+      {dark ? <Sun size={19} /> : <Moon size={19} />}
+    </IconBtn>
+  );
+}
+
+function Brand({ businessName, subtitle }: { businessName: string; subtitle: string }) {
+  return (
+    <Link
+      href="/"
+      aria-label="رفتن به خانه"
+      className="flex min-w-0 items-center gap-2.5 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-400 text-slate-900 shadow-md shadow-amber-500/25">
+        <Zap size={21} strokeWidth={2.5} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-black leading-5 text-slate-900 dark:text-slate-100">
+          {businessName || 'جریان'} <span className="text-amber-600 dark:text-amber-300">فاکتور</span>
+        </span>
+        <span className="block truncate text-[11px] font-bold text-slate-400 dark:text-slate-500">
+          {subtitle}
+        </span>
+      </span>
+    </Link>
   );
 }
 
@@ -70,107 +99,50 @@ export default function Shell({
 }) {
   const path = usePathname();
   const [pending, start] = useTransition();
-  const [open, setOpen] = useState(false);
-
-  // Close drawer on route change; lock scroll + ESC while open.
-  useEffect(() => {
-    setOpen(false);
-  }, [path]);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [open ]);
 
   // Login screen renders without app chrome.
   if (path === '/login') {
     return (
       <div className="app-shell mx-auto min-h-dvh w-full max-w-5xl px-3 pt-3 sm:px-6">
-        <main>{children}</main>
+        <main id="main">{children}</main>
       </div>
     );
   }
 
+  const subtitle = user
+    ? `${user.displayName || user.username}`
+    : tagline || 'صدور فاکتور فارسی برای برقکاران';
+
   return (
-    <div className="app-shell mx-auto min-h-dvh w-full max-w-5xl px-3 pb-32 pt-3 sm:px-6 md:pb-10">
-      {/* Slim glass app bar */}
-      <header className="no-print sticky top-3 z-40 mb-4 overflow-hidden rounded-3xl bg-slate-900/90 text-white shadow-xl shadow-slate-900/20 backdrop-blur-xl dark:bg-slate-950/85 dark:ring-1 dark:ring-white/10 dark:shadow-none">
-        <div className="flex items-center gap-2.5 px-3 py-3 sm:px-4">
-          <button
-            onClick={() => setOpen(true)}
-            aria-label="باز کردن منو"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 transition-all duration-150 hover:bg-white/20 active:scale-95"
-          >
-            <Menu size={20} />
-          </button>
-          <Link href="/" aria-label="رفتن به خانه" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-400 text-slate-900 shadow-lg shadow-amber-500/30">
-            <Zap size={22} strokeWidth={2.5} />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[17px] font-extrabold leading-6">
-              {businessName || 'جریان'} <span className="text-amber-300">فاکتور</span>
-            </h1>
-            <p className="truncate text-[11px] text-slate-300">
-              {user ? `${user.displayName || user.username}` : tagline || 'صدور فاکتور فارسی برای برقکاران'}
-            </p>
-          </div>
-          <ThemeToggle />
-          {user ? (
-            <button
-              onClick={() => start(() => logout())}
-              disabled={pending}
-              aria-label="خروج از حساب"
-              title="خروج"
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 transition-all duration-150 hover:bg-white/20 active:scale-95 disabled:opacity-50"
-            >
-              <LogOut size={19} />
-            </button>
-          ) : null}
-        </div>
-      </header>
-
-      {/* Drawer */}
-      <div
-        aria-hidden={!open}
-        onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-200 ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-      />
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-label="منوی اصلی"
-        className={`fixed inset-y-0 right-0 z-50 flex w-[300px] max-w-[85vw] flex-col bg-white/90 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] dark:bg-slate-950/90 dark:ring-1 dark:ring-white/10 ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
+    <div className="app-shell min-h-dvh lg:flex">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:right-3 focus:top-3 focus:z-[60] focus:rounded-xl focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-amber-300"
       >
-        <div className="flex items-center gap-3 border-b border-slate-900/5 p-4 dark:border-white/10">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-amber-400 text-slate-900">
-            <Zap size={22} strokeWidth={2.5} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-extrabold text-slate-900 dark:text-slate-100">{businessName}</p>
-            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
-              {user ? `${user.displayName || user.username}` : 'پنل برقکار'}
-            </p>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            aria-label="بستن منو"
-            className="grid h-10 w-10 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-900/5 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200"
-          >
-            <X size={19} />
-          </button>
+        پرش به محتوا
+      </a>
+
+      {/* ── Desktop: permanent accessible sidebar (no hamburger, no drawer) ── */}
+      <aside className="no-print hidden w-[280px] shrink-0 flex-col border-l border-slate-200/80 bg-white dark:border-white/10 dark:bg-slate-950 lg:sticky lg:top-0 lg:flex lg:h-dvh">
+        <div className="p-4 pb-2">
+          <Brand businessName={businessName} subtitle={subtitle} />
         </div>
 
-        <nav aria-label="ناوبری اصلی" className="flex-1 space-y-1.5 overflow-y-auto p-3">
-          {TABS.map((t) => {
+        <div className="px-4 py-2">
+          <BtnLink
+            href="/new"
+            variant="primary"
+            size="md"
+            fullWidth
+            aria-current={isActive(path, '/new') ? 'page' : undefined}
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            فاکتور جدید
+          </BtnLink>
+        </div>
+
+        <nav aria-label="ناوبری اصلی" className="sidebar-scroll flex-1 space-y-1 overflow-y-auto px-3 py-2">
+          {TABS.filter((t) => t.href !== '/new').map((t) => {
             const active = isActive(path, t.href);
             const Icon = t.icon;
             return (
@@ -178,20 +150,20 @@ export default function Shell({
                 key={t.href}
                 href={t.href}
                 aria-current={active ? 'page' : undefined}
-                className={`group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all duration-150 active:scale-[0.98] ${
+                className={`group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-[0.98] ${
                   active
-                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 dark:bg-amber-400 dark:text-slate-900 dark:shadow-amber-500/20'
+                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20 dark:bg-amber-400 dark:text-slate-950 dark:shadow-amber-500/20'
                     : 'text-slate-600 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5'
                 }`}
               >
                 <span
-                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition ${
+                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition ${
                     active
-                      ? 'bg-amber-400 text-slate-900 dark:bg-slate-900 dark:text-amber-300'
+                      ? 'bg-amber-400 text-slate-900 dark:bg-slate-950 dark:text-amber-300'
                       : 'bg-slate-900/5 text-slate-500 group-hover:bg-amber-100 group-hover:text-amber-800 dark:bg-white/5 dark:text-slate-400 dark:group-hover:bg-amber-400/15 dark:group-hover:text-amber-200'
                   }`}
                 >
-                  <Icon size={20} />
+                  <Icon size={19} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-extrabold">{t.label}</span>
@@ -204,56 +176,98 @@ export default function Shell({
           })}
         </nav>
 
-        <div className="border-t border-slate-900/5 p-3 dark:border-white/10">
+        <div className="space-y-2 border-t border-slate-200/80 p-3 dark:border-white/10">
           {user ? (
-            <button
-              onClick={() => {
-                setOpen(false);
-                start(() => logout());
-              }}
-              disabled={pending}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-rose-600 transition hover:bg-rose-500/10 disabled:opacity-50 dark:text-rose-400"
-            >
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-rose-500/10">
-                <LogOut size={19} />
+            <div className="flex items-center gap-2.5 rounded-2xl bg-slate-50 px-3 py-2.5 dark:bg-white/5">
+              <span
+                aria-hidden
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-900 text-sm font-black text-amber-300 dark:bg-amber-400 dark:text-slate-950"
+              >
+                {(user.displayName || user.username || 'ک').slice(0, 1)}
               </span>
-              خروج از حساب
-            </button>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-extrabold text-slate-800 dark:text-slate-100">
+                  {user.displayName || user.username}
+                </span>
+                <span className="block text-[11px] text-slate-400 dark:text-slate-500">حساب فعال</span>
+              </span>
+              <ThemeToggle />
+              <IconBtn
+                label="خروج از حساب"
+                tone="danger"
+                size="md"
+                loading={pending}
+                onClick={() => start(() => logout())}
+              >
+                {!pending && <LogOut size={18} />}
+              </IconBtn>
+            </div>
           ) : (
-            <p className="px-3 py-2 text-center text-[11px] text-slate-400 dark:text-slate-500">جریان فاکتور • نسخه ۲</p>
+            <div className="flex items-center justify-between px-1">
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500">جریان فاکتور • نسخه ۲</p>
+              <ThemeToggle />
+            </div>
           )}
         </div>
       </aside>
 
-      <main key={path} className="anim-page">
-        {children}
-      </main>
-
-      {/* Floating glass bottom nav (mobile) */}
-      <nav
-        aria-label="ناوبری موبایل"
-        className="no-print fixed inset-x-3 bottom-3 z-40 rounded-3xl border border-white/40 bg-white/75 pb-[env(safe-area-inset-bottom)] shadow-xl shadow-slate-900/10 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/80 dark:shadow-black/40 md:hidden"
-      >
-        <div className="mx-auto grid max-w-5xl grid-cols-4 px-2 py-2">
-          {TABS.map((t) => {
-            const active = isActive(path, t.href);
-            const Icon = t.icon;
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center gap-1 rounded-2xl py-2 text-[11px] font-extrabold transition-all duration-150 active:scale-95 ${
-                  active ? 'bg-slate-900 text-amber-300 shadow-lg shadow-slate-900/20 dark:bg-amber-400 dark:text-slate-900' : 'text-slate-400 dark:text-slate-500'
-                }`}
+      {/* ── Content column ── */}
+      <div className="min-w-0 flex-1">
+        {/* Mobile top bar: brand + actions only (no hamburger — bottom nav is the nav) */}
+        <header className="no-print sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80 lg:hidden">
+          <div className="mx-auto flex w-full max-w-5xl items-center gap-2 px-3 py-2.5 sm:px-6">
+            <div className="min-w-0 flex-1">
+              <Brand businessName={businessName} subtitle={subtitle} />
+            </div>
+            <ThemeToggle tone="ghost" />
+            {user ? (
+              <IconBtn
+                label="خروج از حساب"
+                tone="ghost"
+                size="md"
+                loading={pending}
+                onClick={() => start(() => logout())}
               >
-                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-                {t.label}
-              </Link>
-            );
-          })}
+                {!pending && <LogOut size={18} />}
+              </IconBtn>
+            ) : null}
+          </div>
+        </header>
+
+        <div className="mx-auto w-full max-w-5xl px-3 pb-32 pt-4 sm:px-6 lg:pb-12 lg:pt-6">
+          <main id="main" key={path} className="anim-page">
+            {children}
+          </main>
         </div>
-      </nav>
+
+        {/* Mobile bottom navigation: the only nav on small screens */}
+        <nav
+          aria-label="ناوبری موبایل"
+          className="no-print fixed inset-x-3 bottom-3 z-40 rounded-3xl border border-slate-200/70 bg-white/90 pb-[env(safe-area-inset-bottom)] shadow-xl shadow-slate-900/10 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/85 dark:shadow-black/40 lg:hidden"
+        >
+          <div className="mx-auto grid max-w-5xl grid-cols-4 gap-1 px-2 py-2">
+            {TABS.map((t) => {
+              const active = isActive(path, t.href);
+              const Icon = t.icon;
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
+                    active
+                      ? 'bg-slate-900 text-amber-300 shadow-lg shadow-slate-900/20 dark:bg-amber-400 dark:text-slate-950'
+                      : 'text-slate-400 hover:bg-slate-900/5 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-white/5 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+                  {t.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
     </div>
   );
 }

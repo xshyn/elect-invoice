@@ -1,14 +1,13 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { BusinessProfile, Invoice } from '../types';
 import { grandTotal } from '../utils/calc';
 import { toFaDigits } from '../utils/persian';
 import { createInvoice, deleteInvoice } from '../lib/actions';
 import { exportInvoicePDF, exportInvoicePNG } from '../lib/export';
-import { Btn } from './ui';
+import { Btn, BtnLink } from './ui';
 import ExportButton, { type ExportFormat } from './ExportButton';
 import InvoicePaper from './InvoicePaper';
 import InvoicePaperExport from './InvoicePaperExport';
@@ -20,6 +19,7 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
   const exportRef = useRef<HTMLDivElement>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [cloning, startClone] = useTransition();
+  const [deleting, startDelete] = useTransition();
 
   const fileBase = `invoice-${invoice.number.replace(/\s+/g, '-')}-${invoice.date.replaceAll('/', '-')}`;
 
@@ -50,32 +50,29 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="no-print flex items-center justify-between gap-2">
-        <button onClick={() => router.back()} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 shadow-sm">
-          <ArrowRight size={17} />
+        <Btn variant="outline" size="sm" onClick={() => router.back()}>
+          <ArrowRight size={17} strokeWidth={2.5} />
           بازگشت
-        </button>
+        </Btn>
         <div className="flex gap-1.5">
-          <Link href={`/edit/${invoice.id}`} className="inline-flex min-h-[44px] items-center rounded-xl bg-white dark:bg-slate-900 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 shadow-sm">
-            <Pencil size={16} />
+          <BtnLink href={`/edit/${invoice.id}`} variant="outline" size="sm">
+            <Pencil size={16} strokeWidth={2.5} />
             ویرایش
-          </Link>
-          <button
-            onClick={handleClone}
-            disabled={cloning}
-            className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-100 dark:bg-amber-400/15 px-4 py-2 text-sm font-bold text-amber-900 dark:text-amber-200 disabled:opacity-50"
-          >
-            {cloning ? '…' : <><Copy size={16} /> کپی</>}
-          </button>
+          </BtnLink>
+          <Btn variant="soft" size="sm" loading={cloning} onClick={handleClone}>
+            {!cloning && <Copy size={16} strokeWidth={2.5} />}
+            کپی
+          </Btn>
         </div>
       </div>
 
       {/* اقدام‌ها بالای فاکتور: چاپ / خروجی / حذف */}
       <div className="no-print grid grid-cols-2 gap-2 rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900 p-3 shadow-sm sm:grid-cols-3">
-        <Btn onClick={() => window.print()}><Printer size={17} strokeWidth={2.5} /> چاپ</Btn>
+        <Btn onClick={() => window.print()} size="md"><Printer size={17} strokeWidth={2.5} /> چاپ</Btn>
         <ExportButton onExport={handleExport} onOpenChange={setExportArmed} />
-        <Btn onClick={() => setConfirmDelete(true)} variant="danger">
+        <Btn onClick={() => setConfirmDelete(true)} variant="danger" size="md" className="col-span-2 sm:col-span-1">
           <Trash2 size={17} strokeWidth={2.5} /> حذف
         </Btn>
       </div>
@@ -94,17 +91,23 @@ export default function InvoiceViewClient({ invoice, business }: { invoice: Invo
       </p>
 
       {confirmDelete ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4" role="dialog" aria-modal="true" aria-label="تأیید حذف">
-          <div className="anim-pop w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="تأیید حذف">
+          <div className="anim-pop w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-6 text-center shadow-2xl dark:ring-1 dark:ring-white/10">
             <h3 className="font-extrabold">حذف فاکتور {toFaDigits(invoice.number)}؟</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">این کار برگشت‌پذیر نیست.</p>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button onClick={() => setConfirmDelete(false)} className="rounded-xl bg-slate-100 dark:bg-white/10 py-3 text-sm font-bold">
+              <Btn variant="subtle" size="md" onClick={() => setConfirmDelete(false)} disabled={deleting}>
                 انصراف
-              </button>
-              <button onClick={() => deleteInvoice(invoice.id)} className="rounded-xl bg-rose-600 py-3 text-sm font-bold text-white">
+              </Btn>
+              <Btn
+                variant="danger"
+                size="md"
+                loading={deleting}
+                onClick={() => startDelete(async () => { await deleteInvoice(invoice.id); })}
+              >
+                {!deleting && <Trash2 size={17} strokeWidth={2.5} />}
                 حذف کن
-              </button>
+              </Btn>
             </div>
           </div>
         </div>

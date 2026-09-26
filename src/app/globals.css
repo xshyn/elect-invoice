@@ -41,6 +41,22 @@ body {
   color: #e2e8f0;
 }
 
+/* ---------- دکمه‌ها: بازخورد یکدست ---------- */
+::selection {
+  background: #fde68a;
+  color: #0f172a;
+}
+
+/* همه دکمه‌ها و لینک‌های دکمه‌ای: نشانگر دست، بدون هایلایت لمسی */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* ورودی‌های عددی: فونت کمی درشت‌تر و چپ‌چین داخل کادر برای خوانایی ارقام */
 .num-input {
   font-variant-numeric: tabular-nums;
@@ -158,12 +174,17 @@ mark.hl {
   display: none;
 }
 
-/* اسکرول‌بار باریک برای جدول‌ها */
-.thin-scroll::-webkit-scrollbar {
+/* اسکرول‌بار باریک برای جدول‌ها و سایدبار */
+.thin-scroll::-webkit-scrollbar,
+.sidebar-scroll::-webkit-scrollbar {
   height: 8px;
   width: 8px;
 }
-.thin-scroll::-webkit-scrollbar-thumb {
+.thin-scroll::-webkit-scrollbar-thumb,
+.sidebar-scroll::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 8px;
+}
+.theme-dark .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
 }

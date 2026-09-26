@@ -1,6 +1,7 @@
 import { db } from '../../lib/db';
 import { getProfile } from '../../lib/invoices';
 import SettingsForm from '../../components/SettingsForm';
+import { PageHeader } from '../../components/ui';
 import { requireUser } from '../../lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -12,8 +13,11 @@ export default async function SettingsPage() {
     db.invoice.count(),
   ]);
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">تنظیمات کسب‌وکار</h2>
+    <div className="space-y-4">
+      <PageHeader
+        title="تنظیمات کسب‌وکار"
+        desc="سربرگ فاکتور، شماره‌گذاری، واحدها، ظاهر چاپی و پشتیبان‌گیری."
+      />
       <SettingsForm initial={profile} invoiceCount={invoiceCount} />
     </div>
   );

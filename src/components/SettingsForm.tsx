@@ -6,7 +6,7 @@ import type { BusinessProfile } from '../types';
 import { toFaDigits } from '../utils/persian';
 import { importBackup, updateSettings } from '../lib/actions';
 import { changePassword } from '../lib/auth';
-import { Btn, Card, Field, PasswordInput, Txt } from './ui';
+import { Btn, Card, Field, IconBtn, PasswordInput, Txt, btnClasses } from './ui';
 
 const THEMES = [
   { value: 'amber', label: 'کهربایی', swatch: 'bg-amber-400' },
@@ -76,7 +76,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {msg ? (
         <div role="status" className="rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-bold text-amber-300">
           {msg}
@@ -97,23 +97,28 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
             <div key={i} className="flex gap-2">
               <Txt value={p} onChange={(e) => set('phones', s.phones.map((x, j) => (j === i ? e.target.value : x)))} inputMode="tel" aria-label={`تلفن ${i + 1}`} />
               {s.phones.length > 1 ? (
-                <button
+                <IconBtn
+                  label={`حذف تلفن ${i + 1}`}
+                  tone="danger"
+                  size="md"
                   onClick={() => set('phones', s.phones.filter((_, j) => j !== i))}
-                  aria-label={`حذف تلفن ${i + 1}`}
-                  className="grid w-12 shrink-0 place-items-center rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-500 dark:text-rose-400"
+                  className="w-12 bg-rose-50 dark:bg-rose-500/10"
                 >
                   <X size={16} />
-                </button>
+                </IconBtn>
               ) : null}
             </div>
           ))}
-          <button
+          <Btn
+            variant="outline"
+            size="sm"
+            fullWidth
             onClick={() => set('phones', [...s.phones, ''])}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 py-2.5 text-[13px] font-bold text-slate-500 dark:text-slate-400"
+            className="!border-dashed !border-2"
           >
             <Plus size={15} strokeWidth={2.5} />
             افزودن شماره
-          </button>
+          </Btn>
         </div>
         <Field label="آدرس">
           <textarea
@@ -136,13 +141,13 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
             )}
             <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleLogo(e.target.files?.[0])} />
             <div className="flex gap-2">
-              <button onClick={() => logoRef.current?.click()} className="rounded-xl bg-slate-100 dark:bg-white/10 px-4 py-2.5 text-[13px] font-bold">
+              <Btn variant="subtle" size="sm" onClick={() => logoRef.current?.click()}>
                 انتخاب تصویر
-              </button>
+              </Btn>
               {s.logoDataUrl ? (
-                <button onClick={() => set('logoDataUrl', '')} className="rounded-xl bg-rose-50 dark:bg-rose-500/15 px-4 py-2.5 text-[13px] font-bold text-rose-600 dark:text-rose-400">
+                <Btn variant="dangerSoft" size="sm" onClick={() => set('logoDataUrl', '')}>
                   حذف
-                </button>
+                </Btn>
               ) : null}
             </div>
           </div>
@@ -194,13 +199,14 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
               className="inline-flex items-center gap-1 rounded-full bg-slate-900/5 py-1.5 pr-3 pl-1.5 text-[13px] font-bold text-slate-700 dark:bg-white/5 dark:text-slate-200"
             >
               {u}
-              <button
+              <IconBtn
+                label={`حذف واحد ${u}`}
+                size="sm"
                 onClick={() => set('units', s.units.filter((x) => x !== u))}
-                aria-label={`حذف واحد ${u}`}
-                className="grid h-6 w-6 place-items-center rounded-full text-slate-400 transition hover:bg-rose-500/15 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-300"
+                className="!h-6 !w-6 !rounded-full hover:!bg-rose-500/15 hover:!text-rose-600 dark:hover:!text-rose-300"
               >
                 <X size={13} />
-              </button>
+              </IconBtn>
             </span>
           ))}
           {s.units.length === 0 ? <span className="text-xs text-slate-400">واحدی تعریف نشده.</span> : null}
@@ -218,7 +224,7 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
             placeholder="مثلاً قرقره"
             aria-label="واحد جدید"
           />
-          <Btn variant="soft" onClick={addUnit} className="shrink-0">
+          <Btn variant="soft" size="md" onClick={addUnit} className="shrink-0">
             <Plus size={16} strokeWidth={2.5} />
             افزودن
           </Btn>
@@ -234,9 +240,10 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
           {THEMES.map((t) => (
             <button
               key={t.value}
+              type="button"
               onClick={() => set('theme', t.value)}
               aria-pressed={s.theme === t.value}
-              className={`rounded-2xl border-2 p-3 text-center ${s.theme === t.value ? 'border-slate-900 dark:border-white' : 'border-slate-100 dark:border-white/10'}`}
+              className={`cursor-pointer rounded-2xl border-2 p-3 text-center transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 ${s.theme === t.value ? 'border-slate-900 shadow-lg dark:border-amber-400' : 'border-slate-100 hover:border-slate-300 dark:border-white/10 dark:hover:border-white/25'}`}
             >
               <span className={`mx-auto block h-8 rounded-lg ${t.swatch}`} />
               <span className="mt-1.5 block text-xs font-bold">{t.label}</span>
@@ -245,8 +252,8 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
         </div>
       </Card>
 
-      <Btn onClick={handleSave} disabled={pending} className="w-full">
-        {pending ? '…در حال ذخیره' : <><Save size={17} strokeWidth={2.5} /> ذخیره تنظیمات</>}
+      <Btn onClick={handleSave} loading={pending} size="lg" fullWidth>
+        {!pending && <Save size={17} strokeWidth={2.5} />} ذخیره تنظیمات
       </Btn>
 
       <Card className="space-y-3 p-4">
@@ -264,7 +271,9 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
         </div>
         <Btn
           variant="outline"
-          disabled={pending}
+          size="md"
+          fullWidth
+          loading={pending}
           onClick={() =>
             start(async () => {
               const res = await changePassword({ current: cur, password: pw, confirm: pw2 });
@@ -287,12 +296,12 @@ export default function SettingsForm({ initial, invoiceCount }: { initial: Busin
           داده‌ها در دیتابیس PostgreSQL خودت نگه داشته می‌شود ({toFaDigits(invoiceCount)} فاکتور). برای جابه‌جایی بین سرورها خروجی JSON بگیر.
         </p>
         <div className="grid grid-cols-2 gap-2">
-          <a href="/api/backup" download className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-amber-100 dark:bg-amber-400/15 px-4 py-2.5 text-sm font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-200">
-            <Upload size={16} />
+          <a href="/api/backup" download className={btnClasses({ variant: 'soft', size: 'md' })}>
+            <Upload size={16} strokeWidth={2.5} />
             خروجی JSON
           </a>
-          <Btn onClick={() => fileRef.current?.click()} variant="outline" disabled={pending}>
-            <Download size={16} />
+          <Btn onClick={() => fileRef.current?.click()} variant="outline" size="md" disabled={pending}>
+            <Download size={16} strokeWidth={2.5} />
             بازیابی JSON
           </Btn>
         </div>
